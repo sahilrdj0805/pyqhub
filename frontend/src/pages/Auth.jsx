@@ -60,12 +60,8 @@ const Auth = () => {
       
       // Redirect after showing success message
       setTimeout(() => {
-        if (activeTab === 'admin' && !isSignUp) {
-          // For admin login, force page reload to ensure proper routing
-          window.location.href = '/admin'
-        } else {
-          window.location.href = '/'
-        }
+        window.history.replaceState(null, '', (activeTab === 'admin' && !isSignUp) ? '/admin' : '/')
+        window.location.href = (activeTab === 'admin' && !isSignUp) ? '/admin' : '/'
       }, 1500)
     } catch (error) {
       const errorMsg = error.message === 'Invalid credentials' 

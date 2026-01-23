@@ -10,7 +10,9 @@ const Browse = () => {
   const [loading, setLoading] = useState(false)
   const [showDropdown, setShowDropdown] = useState(false)
   const [paperSearchTerm, setPaperSearchTerm] = useState('')
+  const [showPaperDropdown, setShowPaperDropdown] = useState(false)
   const searchRef = useRef(null)
+  const paperSearchRef = useRef(null)
 
   useEffect(() => {
     fetchSubjects()
@@ -20,6 +22,9 @@ const Browse = () => {
     const handleClickOutside = (event) => {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
         setShowDropdown(false)
+      }
+      if (paperSearchRef.current && !paperSearchRef.current.contains(event.target)) {
+        setShowPaperDropdown(false)
       }
     }
     document.addEventListener('mousedown', handleClickOutside)
@@ -114,7 +119,7 @@ const filteredSubjects = subjects.filter(subject =>
         {/* Subject Search */}
         <motion.div 
           className="card"
-          style={{ marginBottom: '40px', position: 'relative', zIndex: 1000 , height:'230px'}}
+          style={{ marginBottom: '40px', position: 'relative', zIndex: 1000 }}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
@@ -147,96 +152,170 @@ const filteredSubjects = subjects.filter(subject =>
                 e.target.style.boxShadow = 'none'
               }}
             />
-            
-            {/* Dropdown Suggestions */}
-            <AnimatePresence>
-              {showDropdown && filteredSubjects.length > 0 && (
-                <motion.div
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -10 }}
-                  style={{
-                    position: 'absolute',
-                    top: '100%',
-                    left: 0,
-                    right: 0,
-                    background: '#1a1a1a',
-                    border: '1px solid #333',
-                    borderRadius: '15px',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
-                    zIndex: 1000,
-                    maxHeight: '300px',
-                    overflowY: 'auto',
-                    marginTop: '8px'
-                  }}
-                >
-                  {filteredSubjects.map((subject, index) => (
-                    <motion.div
-                      key={subject._id}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: index * 0.05 }}
-                      onClick={() => handleSubjectSelect(subject.name)}
-                      style={{
-                        padding: '15px 20px',
-                        cursor: 'pointer',
-                        borderBottom: index < filteredSubjects.length - 1 ? '1px solid #333' : 'none',
-                        color: '#ffffff',
-                        fontSize: '16px',
-                        fontWeight: '500',
-                        transition: 'all 0.2s ease'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.target.style.background = '#2a2a2a'
-                        e.target.style.color = '#667eea'
-                      }}
-                      onMouseLeave={(e) => {
-                        e.target.style.background = 'transparent'
-                        e.target.style.color = '#ffffff'
-                      }}
-                    >
-                      📚 {subject.name}
-                    </motion.div>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-
           </div>
         </motion.div>
+
+        {/* Dropdown Suggestions - Outside container */}
+        <AnimatePresence>
+          {showDropdown && filteredSubjects.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              style={{
+                position: 'fixed',
+                top: searchRef.current ? searchRef.current.getBoundingClientRect().bottom + 8 : '300px',
+                left: searchRef.current ? searchRef.current.getBoundingClientRect().left : '50%',
+                width: searchRef.current ? searchRef.current.getBoundingClientRect().width : '90%',
+                background: '#1a1a1a',
+                border: '1px solid #333',
+                borderRadius: '15px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+                zIndex: 9999,
+                maxHeight: '250px',
+                overflowY: 'auto',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#667eea #2a2a2a'
+              }}
+              className="custom-scrollbar"
+            >
+              {filteredSubjects.map((subject, index) => (
+                <motion.div
+                  key={subject._id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  onClick={() => handleSubjectSelect(subject.name)}
+                  style={{
+                    padding: '15px 20px',
+                    cursor: 'pointer',
+                    borderBottom: index < filteredSubjects.length - 1 ? '1px solid #333' : 'none',
+                    color: '#ffffff',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#2a2a2a'
+                    e.target.style.color = '#667eea'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'transparent'
+                    e.target.style.color = '#ffffff'
+                  }}
+                >
+                  📚 {subject.name}
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Paper Search (only show when subject is selected) */}
         {selectedSubject && (
           <motion.div 
             className="card"
-            style={{ marginBottom: '40px' }}
+            style={{ marginBottom: '40px', position: 'relative', zIndex: 999 }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
+            ref={paperSearchRef}
           >
             <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: 'white' }}>
               🔍 Search Papers in {selectedSubject}
             </label>
-            <input
-              type="text"
-              placeholder="Search by paper title..."
-              value={paperSearchTerm}
-              onChange={(e) => setPaperSearchTerm(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '15px 20px',
-                borderRadius: '15px',
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: 'rgba(255,255,255,0.1)',
-                color: 'white',
-                fontSize: '16px',
-                backdropFilter: 'blur(10px)',
-                outline: 'none'
-              }}
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Search by paper title..."
+                value={paperSearchTerm}
+                onChange={(e) => {
+                  setPaperSearchTerm(e.target.value)
+                  setShowPaperDropdown(e.target.value.length > 0)
+                }}
+                onFocus={() => setShowPaperDropdown(paperSearchTerm.length > 0)}
+                style={{
+                  width: '100%',
+                  padding: '15px 20px',
+                  borderRadius: '15px',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  background: 'rgba(255,255,255,0.1)',
+                  color: 'white',
+                  fontSize: '16px',
+                  backdropFilter: 'blur(10px)',
+                  outline: 'none'
+                }}
+              />
+            </div>
           </motion.div>
         )}
+
+        {/* Paper Dropdown Suggestions */}
+        <AnimatePresence>
+          {showPaperDropdown && selectedSubject && filteredPYQs.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              style={{
+                position: 'fixed',
+                top: paperSearchRef.current ? paperSearchRef.current.getBoundingClientRect().bottom + 8 : '400px',
+                left: paperSearchRef.current ? paperSearchRef.current.getBoundingClientRect().left : '50%',
+                width: paperSearchRef.current ? paperSearchRef.current.getBoundingClientRect().width : '90%',
+                background: '#1a1a1a',
+                border: '1px solid #333',
+                borderRadius: '15px',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.8)',
+                zIndex: 9998,
+                maxHeight: '200px',
+                overflowY: 'auto',
+                scrollbarWidth: 'thin',
+                scrollbarColor: '#667eea #2a2a2a'
+              }}
+              className="custom-scrollbar"
+            >
+              {filteredPYQs.slice(0, 10).map((pyq, index) => (
+                <motion.div
+                  key={pyq._id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.03 }}
+                  onClick={() => {
+                    setPaperSearchTerm(pyq.title)
+                    setShowPaperDropdown(false)
+                  }}
+                  onMouseEnter={(e) => {
+                    e.target.style.background = '#2a2a2a'
+                    e.target.style.color = '#667eea'
+                    e.target.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+                  }}
+                  onMouseLeave={(e) => {
+                    e.target.style.background = 'transparent'
+                    e.target.style.color = '#ffffff'
+                  }}
+                  style={{
+                    padding: '12px 20px',
+                    cursor: 'pointer',
+                    borderBottom: index < Math.min(filteredPYQs.length, 10) - 1 ? '1px solid #333' : 'none',
+                    color: '#ffffff',
+                    fontSize: '14px',
+                    fontWeight: '500',
+                    transition: 'all 0.2s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  <span style={{ fontSize: '16px' }}>📄</span>
+                  <div>
+                    <div style={{ fontWeight: '600' }}>{pyq.title}</div>
+                    <div style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)' }}>{pyq.year}</div>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Results */}
         {selectedSubject && (

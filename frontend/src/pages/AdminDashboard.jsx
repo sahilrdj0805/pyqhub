@@ -98,12 +98,8 @@ const AdminDashboard = () => {
   const handleViewSubjectPYQs = async (subject) => {
     setViewingSubject(subject)
     try {
-      const baseURL = process.env.NODE_ENV === 'production' 
-        ? 'https://pyqproject-backend.onrender.com'
-        : 'http://localhost:5000'
-      
       // Use the same endpoint as Browse page
-      const response = await fetch(`${baseURL}/api/pyqs/by-subject?subject=${encodeURIComponent(subject.name)}`)
+      const response = await fetch(`http://localhost:5000/api/pyqs/by-subject?subject=${encodeURIComponent(subject.name)}`)
       const data = await response.json()
       setSubjectPYQs(data)
     } catch (error) {
@@ -230,23 +226,15 @@ const AdminDashboard = () => {
   }
 
   const handleViewPYQPDF = (pyq) => {
-    const baseURL = process.env.NODE_ENV === 'production' 
-      ? 'https://pyqproject-backend.onrender.com'
-      : 'http://localhost:5000'
-    
     // Use same proxy format as Browse page
-    const proxyUrl = `${baseURL}/api/pdf/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}`
+    const proxyUrl = `http://localhost:5000/api/pdf/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}`
     window.open(proxyUrl, '_blank')
   }
 
   const handleViewPDF = (fileUrl, title, requestId) => {
-    const baseURL = process.env.NODE_ENV === 'production' 
-      ? 'https://pyqproject-backend.onrender.com'
-      : 'http://localhost:5000'
-    
     // Use PDF proxy for proper viewing (same as Browse page)
     // For upload requests, we'll use a generic ID since they're not PYQs yet
-    const proxyUrl = `${baseURL}/api/pdf/request-${requestId}?url=${encodeURIComponent(fileUrl)}`
+    const proxyUrl = `http://localhost:5000/api/pdf/request-${requestId}?url=${encodeURIComponent(fileUrl)}`
     window.open(proxyUrl, '_blank')
   }
 

@@ -5,6 +5,8 @@ import Navbar from './components/Navbar'
 import Home from './pages/Home'
 import Browse from './pages/Browse'
 import Upload from './pages/Upload'
+import About from './pages/About'
+import Contact from './pages/Contact'
 import AdminDashboard from './pages/AdminDashboard'
 import Auth from './pages/Auth'
 import Footer from './components/Footer'
@@ -72,6 +74,8 @@ function AppContent() {
             <Route path="/" element={<Home />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/upload" element={<Upload />} />
+            <Route path="/about" element={<About />} />
+            <Route path="/contact" element={<Contact />} />
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

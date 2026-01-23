@@ -208,4 +208,85 @@ export const AuthAPI = {
   }
 }
 
+// Contact API instance for localhost
+const contactApi = axios.create({
+  baseURL: 'http://localhost:5000/api',
+  timeout: 10000,
+  headers: {
+    'Content-Type': 'application/json'
+  }
+})
+
+// Contact API methods
+export const ContactAPI = {
+  // Send contact message
+  async sendMessage(messageData) {
+    try {
+      const response = await contactApi.post('/contact', messageData)
+      return response.data
+    } catch (error) {
+      throw new Error(error.response?.data?.message || 'Failed to send message')
+    }
+  },
+
+  // Get all contact messages (Admin only)
+  async getAllMessages() {
+    try {
+      const token = AuthService.getToken()
+      const response = await contactApi.get('/contact', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      return response.data
+    } catch (error) {
+      throw new Error('Failed to fetch messages')
+    }
+  },
+
+  // Update message status (Admin only)
+  async updateMessage(messageId, updateData) {
+    try {
+      const token = AuthService.getToken()
+      const response = await contactApi.put(`/contact/${messageId}`, updateData, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      return response.data
+    } catch (error) {
+      throw new Error('Failed to update message')
+    }
+  },
+
+  // Delete message (Admin only)
+  async deleteMessage(messageId) {
+    try {
+      const token = AuthService.getToken()
+      const response = await contactApi.delete(`/contact/${messageId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      return response.data
+    } catch (error) {
+      throw new Error('Failed to delete message')
+    }
+  },
+
+  // Get contact stats (Admin only)
+  async getContactStats() {
+    try {
+      const token = AuthService.getToken()
+      const response = await contactApi.get('/contact/stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      return response.data
+    } catch (error) {
+      return {
+        stats: {
+          totalMessages: 0,
+          unreadMessages: 0,
+          repliedMessages: 0,
+          recentMessages: 0
+        }
+      }
+    }
+  }
+}
+
 export default api

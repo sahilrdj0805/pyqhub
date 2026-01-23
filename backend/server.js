@@ -6,6 +6,7 @@ import pyqRoutes from './routes/pyqRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import uploadRequestRoutes from './routes/uploadRequestRoutes.js';
 import authRoutes from './routes/authRoutes.js';
+import contactRoutes from './routes/contactRoutes.js';
 import connectDB from './config/db.js';
 import axios from 'axios';
 
@@ -132,6 +133,7 @@ app.use('/api/subjects', subjectRoutes);
 app.use('/api/pyqs', pyqRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload-requests', uploadRequestRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Public stats endpoint
 app.get('/api/stats', async (req, res) => {

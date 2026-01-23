@@ -33,7 +33,7 @@ const Browse = () => {
 
   const fetchSubjects = async () => {
     try {
-      const response = await axios.get('https://pyqproject-backend.onrender.com/api/subjects')
+      const response = await axios.get('http://localhost:5000/api/subjects')
       setSubjects(response.data)
     } catch (error) {
       console.error('Error fetching subjects:', error)
@@ -48,7 +48,7 @@ const Browse = () => {
     
     setLoading(true)
     try {
-      const response = await axios.get(`https://pyqproject-backend.onrender.com/api/pyqs/by-subject?subject=${encodeURIComponent(subjectName)}`)
+      const response = await axios.get(`http://localhost:5000/api/pyqs/by-subject?subject=${encodeURIComponent(subjectName)}`)
       setPyqs(response.data)
     } catch (error) {
       console.error('Error fetching PYQs:', error)
@@ -398,7 +398,7 @@ const filteredSubjects = subjects.filter(subject =>
                   <button
                     onClick={() => {
                       // Use PDF proxy for proper viewing
-                      const proxyUrl = `https://pyqproject-backend.onrender.com/api/pdf/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}`
+                      const proxyUrl = `http://localhost:5000/api/pdf/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}`
                       window.open(proxyUrl, '_blank')
                     }}
                     style={{
@@ -420,7 +420,7 @@ const filteredSubjects = subjects.filter(subject =>
                   <button
                     onClick={() => {
                       // Force download using download endpoint
-                      const downloadUrl = `https://pyqproject-backend.onrender.com/api/download/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}&filename=${encodeURIComponent(pyq.title + '.pdf')}`
+                      const downloadUrl = `http://localhost:5000/api/download/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}&filename=${encodeURIComponent(pyq.title + '.pdf')}`
                       window.location.href = downloadUrl
                     }}
                     style={{

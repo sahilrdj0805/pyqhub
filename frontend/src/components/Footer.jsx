@@ -57,10 +57,11 @@ const Footer = () => {
         <div className="footer-section">
           <h3>Quick Links</h3>
           <div className="footer-links">
+            <a href="/">🏠 Home</a>
             <a href="/browse">📚 Browse PYQs</a>
             <a href="/upload">📤 Upload Questions</a>
             <a href="/about">ℹ️ About Us</a>
-            <a href="/contact">📞 Contact Support</a>
+            <a href="/contact">📞 Contact Us</a>
           </div>
         </div>
         

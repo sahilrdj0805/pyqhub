@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { AdminAPI } from '../ApiService'
+import { AdminAPI, ContactAPI } from '../ApiService'
 import AuthService from '../AuthService'
 
 const AdminDashboard = () => {
@@ -14,7 +14,9 @@ const AdminDashboard = () => {
     totalDownloads: 0,
     popularSubjects: [],
     approvedToday: 0,
-    rejectedToday: 0
+    rejectedToday: 0,
+    totalMessages: 0,
+    unreadMessages: 0
   })
   const [pendingRequests, setPendingRequests] = useState([])
   const [uploadForm, setUploadForm] = useState({
@@ -37,6 +39,10 @@ const AdminDashboard = () => {
   const [subjectPYQs, setSubjectPYQs] = useState([])
   const [deletingPYQ, setDeletingPYQ] = useState(null)
   const [showProfileDropdown, setShowProfileDropdown] = useState(false)
+  const [contactMessages, setContactMessages] = useState([])
+  const [viewingMessage, setViewingMessage] = useState(null)
+  const [replyText, setReplyText] = useState('')
+  const [sendingReply, setSendingReply] = useState(false)
   const dropdownRef = useRef(null)
 
   useEffect(() => {
@@ -44,6 +50,9 @@ const AdminDashboard = () => {
     fetchSubjects()
     if (activeModule === 'users') {
       fetchUsers()
+    }
+    if (activeModule === 'messages') {
+      fetchContactMessages()
     }
     
     const handleClickOutside = (event) => {
@@ -73,6 +82,15 @@ const AdminDashboard = () => {
       setUsers(response)
     } catch (error) {
       console.error('Failed to fetch users:', error)
+    }
+  }
+
+  const fetchContactMessages = async () => {
+    try {
+      const response = await ContactAPI.getAllMessages()
+      setContactMessages(response.messages || [])
+    } catch (error) {
+      console.error('Failed to fetch contact messages:', error)
     }
   }
 
@@ -153,9 +171,10 @@ const AdminDashboard = () => {
 
   const fetchDashboardData = async () => {
     try {
-      const [requests, dashboardStats] = await Promise.all([
+      const [requests, dashboardStats, contactStats] = await Promise.all([
         AdminAPI.getPendingRequests(),
-        AdminAPI.getDashboardStats()
+        AdminAPI.getDashboardStats(),
+        ContactAPI.getContactStats()
       ])
       
       setPendingRequests(requests)
@@ -167,7 +186,9 @@ const AdminDashboard = () => {
         totalDownloads: dashboardStats.totalDownloads || 0,
         approvedToday: dashboardStats.approvedToday || 0,
         rejectedToday: dashboardStats.rejectedToday || 0,
-        popularSubjects: dashboardStats.popularSubjects || []
+        popularSubjects: dashboardStats.popularSubjects || [],
+        totalMessages: contactStats.stats?.totalMessages || 0,
+        unreadMessages: contactStats.stats?.unreadMessages || 0
       }
       setStats(newStats)
     } catch (error) {
@@ -438,171 +459,245 @@ const AdminDashboard = () => {
     </motion.div>
   )
 
-  const QuickActionButton = ({ icon, label, module, isActive }) => (
-    <motion.button
-      onClick={() => handleModuleChange(module)}
-      whileHover={{ 
-        scale: 1.08, 
-        y: -4,
-        rotateX: 5,
-        rotateY: 2
-      }}
-      whileTap={{ scale: 0.95 }}
-      style={{
-        background: isActive 
-          ? 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-          : 'rgba(255, 255, 255, 0.05)',
-        border: isActive 
-          ? '1px solid rgba(102, 126, 234, 0.4)'
-          : '1px solid rgba(255, 255, 255, 0.1)',
-        borderRadius: '16px',
-        padding: '20px 28px',
-        color: 'white',
-        cursor: 'pointer',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        fontSize: '0.95rem',
-        fontWeight: '600',
-        transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
-        minWidth: 'clamp(140px, 35vw, 160px)',
-        justifyContent: 'center',
-        position: 'relative',
-        overflow: 'hidden',
-        transformStyle: 'preserve-3d',
-        perspective: '1000px',
-        backdropFilter: 'blur(20px)'
-      }}
-      onMouseEnter={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.background = 'linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%)'
-          e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'
-          e.currentTarget.style.boxShadow = '0 15px 35px rgba(102, 126, 234, 0.2), 0 0 0 1px rgba(102, 126, 234, 0.1), inset 0 1px 0 rgba(255,255,255,0.1)'
-        }
-        
-        // Add shimmer effect
-        const shimmer = document.createElement('div')
-        shimmer.style.cssText = `
-          position: absolute;
-          top: -50%;
-          left: -50%;
-          width: 200%;
-          height: 200%;
-          background: linear-gradient(45deg, transparent, rgba(255,255,255,0.2), transparent);
-          animation: shimmer 1.5s infinite;
-          pointer-events: none;
-          z-index: 1;
-        `
-        e.currentTarget.appendChild(shimmer)
-        
-        // Add ripple effect
-        const ripple = document.createElement('div')
-        ripple.style.cssText = `
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          width: 0;
-          height: 0;
-          border-radius: 50%;
-          background: rgba(102, 126, 234, 0.3);
-          transform: translate(-50%, -50%);
-          animation: ripple 0.6s ease-out;
-          pointer-events: none;
-          z-index: 0;
-        `
-        e.currentTarget.appendChild(ripple)
-        
-        setTimeout(() => {
-          if (shimmer.parentNode) shimmer.remove()
-          if (ripple.parentNode) ripple.remove()
-        }, 1500)
-      }}
-      onMouseLeave={(e) => {
-        if (!isActive) {
-          e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)'
-          e.currentTarget.style.boxShadow = 'none'
-        }
-      }}
-    >
-      {/* Background glow effect */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: isActive 
-          ? 'radial-gradient(circle at center, rgba(102, 126, 234, 0.1) 0%, transparent 70%)'
-          : 'radial-gradient(circle at center, rgba(255, 255, 255, 0.02) 0%, transparent 70%)',
-        borderRadius: '16px',
-        opacity: 0.8
-      }} />
-      
-      {/* Animated icon with 3D effect */}
-      <motion.span 
+  const QuickActionButton = ({ icon, label, module, isActive }) => {
+    const cardColors = {
+      subjects: { primary: '#9b59b6', secondary: '#8e44ad', bg: 'rgba(155, 89, 182, 0.1)' },
+      pyqs: { primary: '#f39c12', secondary: '#e67e22', bg: 'rgba(243, 156, 18, 0.1)' },
+      users: { primary: '#3498db', secondary: '#2980b9', bg: 'rgba(52, 152, 219, 0.1)' },
+      messages: { primary: '#e74c3c', secondary: '#c0392b', bg: 'rgba(231, 76, 60, 0.1)' },
+      upload: { primary: '#2ecc71', secondary: '#27ae60', bg: 'rgba(46, 204, 113, 0.1)' },
+      analytics: { primary: '#ff6b6b', secondary: '#ee5a52', bg: 'rgba(255, 107, 107, 0.1)' }
+    }
+    
+    const colors = cardColors[module] || { primary: '#667eea', secondary: '#764ba2', bg: 'rgba(102, 126, 234, 0.1)' }
+    
+    return (
+      <motion.button
+        onClick={() => handleModuleChange(module)}
         whileHover={{ 
-          scale: 1.2, 
-          rotateY: 10,
-          rotateZ: 5
+          scale: 1.05, 
+          y: -8,
+          rotateX: 5,
+          rotateY: 2
         }}
-        style={{ 
-          fontSize: '1.4rem',
+        whileTap={{ scale: 0.95 }}
+        style={{
+          background: isActive 
+            ? `linear-gradient(135deg, ${colors.primary} 0%, ${colors.secondary} 100%)`
+            : 'rgba(255, 255, 255, 0.03)',
+          border: isActive 
+            ? `2px solid ${colors.primary}40`
+            : '2px solid rgba(255, 255, 255, 0.08)',
+          borderRadius: '20px',
+          padding: 'clamp(16px, 4vw, 24px) clamp(12px, 3vw, 20px)',
+          color: 'white',
+          cursor: 'pointer',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '16px',
+          fontSize: '0.95rem',
+          fontWeight: '600',
+          transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
+          minWidth: 'clamp(140px, 25vw, 180px)',
+          minHeight: 'clamp(120px, 20vw, 140px)',
+          justifyContent: 'center',
           position: 'relative',
-          zIndex: 2,
+          overflow: 'hidden',
           transformStyle: 'preserve-3d',
-          filter: isActive 
-            ? 'drop-shadow(0 2px 4px rgba(102, 126, 234, 0.4))'
-            : 'drop-shadow(0 2px 4px rgba(255, 255, 255, 0.1))'
+          perspective: '1000px',
+          backdropFilter: 'blur(25px)',
+          boxShadow: isActive 
+            ? `0 20px 40px ${colors.primary}20, 0 0 0 1px ${colors.primary}30, inset 0 1px 0 rgba(255,255,255,0.1)`
+            : '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+        }}
+        onMouseEnter={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.background = colors.bg
+            e.currentTarget.style.borderColor = `${colors.primary}30`
+            e.currentTarget.style.boxShadow = `0 15px 35px ${colors.primary}15, 0 0 0 1px ${colors.primary}20, inset 0 1px 0 rgba(255,255,255,0.1)`
+          }
+          
+          // Add floating particles effect
+          const particles = document.createElement('div')
+          particles.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 30% 70%, ${colors.primary}15 0%, transparent 50%), 
+                        radial-gradient(circle at 70% 30%, ${colors.secondary}10 0%, transparent 50%);
+            border-radius: 20px;
+            opacity: 0.8;
+            pointer-events: none;
+            z-index: 1;
+          `
+          e.currentTarget.appendChild(particles)
+          
+          // Add shimmer effect
+          const shimmer = document.createElement('div')
+          shimmer.style.cssText = `
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, ${colors.primary}20, transparent);
+            animation: shimmer 2s infinite;
+            pointer-events: none;
+            z-index: 2;
+          `
+          e.currentTarget.appendChild(shimmer)
+          
+          setTimeout(() => {
+            if (particles.parentNode) particles.remove()
+            if (shimmer.parentNode) shimmer.remove()
+          }, 2000)
+        }}
+        onMouseLeave={(e) => {
+          if (!isActive) {
+            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.03)'
+            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
+            e.currentTarget.style.boxShadow = '0 8px 32px rgba(0, 0, 0, 0.1), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
+          }
         }}
       >
-        {icon}
-      </motion.span>
-      
-      {/* Enhanced label */}
-      <span style={{
-        position: 'relative',
-        zIndex: 2,
-        textShadow: isActive 
-          ? '0 1px 2px rgba(102, 126, 234, 0.3)'
-          : '0 1px 2px rgba(0, 0, 0, 0.2)',
-        letterSpacing: '0.3px'
-      }}>
-        {label}
-      </span>
-      
-      {/* Rotating border for active state */}
-      {isActive && (
+        {/* Background gradient overlay */}
         <div style={{
           position: 'absolute',
-          top: '-2px',
-          left: '-2px',
-          right: '-2px',
-          bottom: '-2px',
-          background: 'conic-gradient(from 0deg, #667eea, transparent, #764ba2, transparent, #667eea)',
-          borderRadius: '18px',
-          opacity: 0.6,
-          animation: 'rotate 4s linear infinite',
-          zIndex: -1
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: isActive 
+            ? `radial-gradient(circle at center, ${colors.primary}10 0%, transparent 70%)`
+            : 'radial-gradient(circle at center, rgba(255, 255, 255, 0.02) 0%, transparent 70%)',
+          borderRadius: '20px',
+          opacity: 0.8
         }} />
-      )}
-      
-      <style jsx>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-          100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-        }
-        @keyframes ripple {
-          0% { width: 0; height: 0; opacity: 1; }
-          100% { width: 200px; height: 200px; opacity: 0; }
-        }
-        @keyframes rotate {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-    </motion.button>
-  )
+        
+        {/* Animated icon with enhanced 3D effect */}
+        <motion.div 
+          whileHover={{ 
+            scale: 1.3, 
+            rotateY: 15,
+            rotateZ: 5
+          }}
+          style={{ 
+            fontSize: 'clamp(1.8rem, 6vw, 2.5rem)',
+            position: 'relative',
+            zIndex: 3,
+            transformStyle: 'preserve-3d',
+            filter: isActive 
+              ? `drop-shadow(0 4px 8px ${colors.primary}40) drop-shadow(0 0 20px ${colors.primary}20)`
+              : 'drop-shadow(0 2px 4px rgba(255, 255, 255, 0.1))',
+            background: isActive 
+              ? `linear-gradient(135deg, ${colors.primary}20, transparent)`
+              : 'transparent',
+            borderRadius: '16px',
+            padding: 'clamp(8px, 2vw, 12px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            width: 'clamp(60px, 15vw, 80px)',
+            height: 'clamp(60px, 15vw, 80px)',
+            border: isActive 
+              ? `2px solid ${colors.primary}30`
+              : '2px solid transparent'
+          }}
+        >
+          {icon}
+        </motion.div>
+        
+        {/* Enhanced label with gradient text */}
+        <div style={{
+          position: 'relative',
+          zIndex: 3,
+          textAlign: 'center',
+          lineHeight: '1.3'
+        }}>
+          <div style={{
+            background: isActive 
+              ? `linear-gradient(135deg, white, ${colors.primary})`
+              : 'linear-gradient(135deg, white, rgba(255,255,255,0.8))',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text',
+            fontSize: 'clamp(0.85rem, 3vw, 1rem)',
+            fontWeight: '700',
+            letterSpacing: '0.5px',
+            textShadow: isActive 
+              ? `0 2px 4px ${colors.primary}30`
+              : '0 1px 2px rgba(0, 0, 0, 0.2)'
+          }}>
+            {label}
+          </div>
+          {isActive && (
+            <motion.div
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              style={{
+                fontSize: 'clamp(0.65rem, 2.5vw, 0.75rem)',
+                color: 'rgba(255,255,255,0.8)',
+                marginTop: '4px',
+                fontWeight: '500'
+              }}
+            >
+              Active Module
+            </motion.div>
+          )}
+        </div>
+        
+        {/* Rotating border for active state */}
+        {isActive && (
+          <div style={{
+            position: 'absolute',
+            top: '-3px',
+            left: '-3px',
+            right: '-3px',
+            bottom: '-3px',
+            background: `conic-gradient(from 0deg, ${colors.primary}, transparent, ${colors.secondary}, transparent, ${colors.primary})`,
+            borderRadius: '23px',
+            opacity: 0.6,
+            animation: 'rotate 4s linear infinite',
+            zIndex: -1
+          }} />
+        )}
+        
+        {/* Pulse effect for active state */}
+        {isActive && (
+          <div style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '100%',
+            height: '100%',
+            background: `radial-gradient(circle, ${colors.primary}20 0%, transparent 70%)`,
+            borderRadius: '50%',
+            transform: 'translate(-50%, -50%)',
+            animation: 'pulse 2s infinite',
+            zIndex: 0
+          }} />
+        )}
+        
+        <style jsx>{`
+          @keyframes shimmer {
+            0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
+            100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
+          }
+          @keyframes rotate {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+          @keyframes pulse {
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.3; }
+            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.1; }
+          }
+        `}</style>
+      </motion.button>
+    )
+  }
 
   return (
     <div style={{
@@ -986,6 +1081,12 @@ const AdminDashboard = () => {
               value={stats.totalDownloads} 
               color="#48bb78" 
             />
+            <StatCard 
+              icon="💬" 
+              title="Contact Messages" 
+              value={stats.unreadMessages} 
+              color="#ff6b6b" 
+            />
           </div>
         </motion.div>
 
@@ -1028,6 +1129,12 @@ const AdminDashboard = () => {
               label="Manage Users" 
               module="users"
               isActive={activeModule === 'users'}
+            />
+            <QuickActionButton 
+              icon="💬" 
+              label="Contact Messages" 
+              module="messages"
+              isActive={activeModule === 'messages'}
             />
             <QuickActionButton 
               icon="📤" 
@@ -1914,90 +2021,90 @@ const AdminDashboard = () => {
               {/* Key Metrics Grid */}
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-                gap: '20px',
-                marginBottom: '32px' 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(180px, 100%), 1fr))', 
+                gap: 'clamp(15px, 4vw, 20px)',
+                marginBottom: 'clamp(24px, 6vw, 32px)' 
               }}>
                 <div style={{
                   background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                   borderRadius: '12px',
-                  padding: '20px',
+                  padding: 'clamp(16px, 4vw, 20px)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>📈</div>
-                  <div style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700' }}>
+                  <div style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', marginBottom: '8px' }}>📈</div>
+                  <div style={{ color: 'white', fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', fontWeight: '700' }}>
                     {((stats.approvedToday / (stats.approvedToday + stats.rejectedToday)) * 100 || 0).toFixed(1)}%
                   </div>
-                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>Approval Rate</div>
+                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>Approval Rate</div>
                 </div>
 
                 <div style={{
                   background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
                   borderRadius: '12px',
-                  padding: '20px',
+                  padding: 'clamp(16px, 4vw, 20px)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>⚡</div>
-                  <div style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700' }}>
+                  <div style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', marginBottom: '8px' }}>⚡</div>
+                  <div style={{ color: 'white', fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', fontWeight: '700' }}>
                     {(stats.totalDownloads / stats.totalPYQs || 0).toFixed(1)}
                   </div>
-                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>Avg Downloads/PYQ</div>
+                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>Avg Downloads/PYQ</div>
                 </div>
 
                 <div style={{
                   background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
                   borderRadius: '12px',
-                  padding: '20px',
+                  padding: 'clamp(16px, 4vw, 20px)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>🎯</div>
-                  <div style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700' }}>
+                  <div style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', marginBottom: '8px' }}>🎯</div>
+                  <div style={{ color: 'white', fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', fontWeight: '700' }}>
                     {(stats.totalPYQs / stats.totalSubjects || 0).toFixed(1)}
                   </div>
-                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>PYQs per Subject</div>
+                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>PYQs per Subject</div>
                 </div>
 
                 <div style={{
                   background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
                   borderRadius: '12px',
-                  padding: '20px',
+                  padding: 'clamp(16px, 4vw, 20px)',
                   textAlign: 'center'
                 }}>
-                  <div style={{ fontSize: '2rem', marginBottom: '8px' }}>👥</div>
-                  <div style={{ color: 'white', fontSize: '1.5rem', fontWeight: '700' }}>
+                  <div style={{ fontSize: 'clamp(1.5rem, 5vw, 2rem)', marginBottom: '8px' }}>👥</div>
+                  <div style={{ color: 'white', fontSize: 'clamp(1.2rem, 4vw, 1.5rem)', fontWeight: '700' }}>
                     {stats.totalUsers > 0 ? (stats.totalDownloads / stats.totalUsers).toFixed(1) : '0'}
                   </div>
-                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.9rem' }}>Downloads per User</div>
+                  <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>Downloads per User</div>
                 </div>
               </div>
 
               {/* Activity Summary */}
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-                gap: '24px',
-                marginBottom: '32px' 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(min(280px, 100%), 1fr))', 
+                gap: 'clamp(20px, 5vw, 24px)',
+                marginBottom: 'clamp(24px, 6vw, 32px)' 
               }}>
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '12px',
-                  padding: '24px'
+                  padding: 'clamp(20px, 5vw, 24px)'
                 }}>
-                  <h4 style={{ color: 'white', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px' }}>
+                  <h4 style={{ color: 'white', fontSize: 'clamp(1.1rem, 3vw, 1.2rem)', fontWeight: '600', marginBottom: '16px' }}>
                     📊 Today's Activity
                   </h4>
                   <div style={{ display: 'grid', gap: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.8)' }}>✅ Approved</span>
-                      <span style={{ color: '#48bb78', fontWeight: '600' }}>{stats.approvedToday}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>✅ Approved</span>
+                      <span style={{ color: '#48bb78', fontWeight: '600', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>{stats.approvedToday}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.8)' }}>❌ Rejected</span>
-                      <span style={{ color: '#ef4444', fontWeight: '600' }}>{stats.rejectedToday}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>❌ Rejected</span>
+                      <span style={{ color: '#ef4444', fontWeight: '600', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>{stats.rejectedToday}</span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.8)' }}>⏳ Pending</span>
-                      <span style={{ color: '#ffc107', fontWeight: '600' }}>{stats.pendingRequests}</span>
+                      <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>⏳ Pending</span>
+                      <span style={{ color: '#ffc107', fontWeight: '600', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>{stats.pendingRequests}</span>
                     </div>
                   </div>
                 </div>
@@ -2005,15 +2112,15 @@ const AdminDashboard = () => {
                 <div style={{
                   background: 'rgba(255, 255, 255, 0.05)',
                   borderRadius: '12px',
-                  padding: '24px'
+                  padding: 'clamp(20px, 5vw, 24px)'
                 }}>
-                  <h4 style={{ color: 'white', fontSize: '1.2rem', fontWeight: '600', marginBottom: '16px' }}>
+                  <h4 style={{ color: 'white', fontSize: 'clamp(1.1rem, 3vw, 1.2rem)', fontWeight: '600', marginBottom: '16px' }}>
                     📈 Real-time Metrics
                   </h4>
                   <div style={{ display: 'grid', gap: '12px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.8)' }}>Approval Rate</span>
-                      <span style={{ color: '#48bb78', fontWeight: '600' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>Approval Rate</span>
+                      <span style={{ color: '#48bb78', fontWeight: '600', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>
                         {stats.approvedToday + stats.rejectedToday > 0 
                           ? `${((stats.approvedToday / (stats.approvedToday + stats.rejectedToday)) * 100).toFixed(1)}%`
                           : 'N/A'
@@ -2021,14 +2128,14 @@ const AdminDashboard = () => {
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.8)' }}>Avg Downloads/PYQ</span>
-                      <span style={{ color: '#4a90e2', fontWeight: '600' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>Avg Downloads/PYQ</span>
+                      <span style={{ color: '#4a90e2', fontWeight: '600', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>
                         {stats.totalPYQs > 0 ? (stats.totalDownloads / stats.totalPYQs).toFixed(1) : '0'}
                       </span>
                     </div>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ color: 'rgba(255,255,255,0.8)' }}>PYQs per Subject</span>
-                      <span style={{ color: '#9c27b0', fontWeight: '600' }}>
+                      <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>PYQs per Subject</span>
+                      <span style={{ color: '#9c27b0', fontWeight: '600', fontSize: 'clamp(0.8rem, 2.5vw, 0.9rem)' }}>
                         {stats.totalSubjects > 0 ? (stats.totalPYQs / stats.totalSubjects).toFixed(1) : '0'}
                       </span>
                     </div>
@@ -2040,10 +2147,10 @@ const AdminDashboard = () => {
               <div style={{
                 background: 'rgba(255, 255, 255, 0.05)',
                 borderRadius: '12px',
-                padding: '24px',
-                marginBottom: '32px'
+                padding: 'clamp(20px, 5vw, 24px)',
+                marginBottom: 'clamp(24px, 6vw, 32px)'
               }}>
-                <h4 style={{ color: 'white', fontSize: '1.2rem', fontWeight: '600', marginBottom: '20px' }}>
+                <h4 style={{ color: 'white', fontSize: 'clamp(1.1rem, 3vw, 1.2rem)', fontWeight: '600', marginBottom: '20px' }}>
                   🏆 Most Popular Subjects
                 </h4>
                 <div style={{ display: 'grid', gap: '16px' }}>
@@ -2061,13 +2168,14 @@ const AdminDashboard = () => {
                           style={{
                             display: 'flex',
                             alignItems: 'center',
-                            gap: '16px',
-                            padding: '16px 20px',
+                            gap: 'clamp(12px, 3vw, 16px)',
+                            padding: 'clamp(12px, 3vw, 16px) clamp(16px, 4vw, 20px)',
                             background: 'rgba(255, 255, 255, 0.05)',
                             borderRadius: '12px',
                             border: `2px solid ${color}20`,
                             transition: 'all 0.3s ease',
-                            cursor: 'pointer'
+                            cursor: 'pointer',
+                            flexWrap: 'wrap'
                           }}
                           onMouseEnter={(e) => {
                             e.currentTarget.style.background = `${color}15`
@@ -2079,24 +2187,26 @@ const AdminDashboard = () => {
                           }}
                         >
                           <div style={{
-                            width: '48px',
-                            height: '48px',
+                            width: 'clamp(40px, 10vw, 48px)',
+                            height: 'clamp(40px, 10vw, 48px)',
                             borderRadius: '12px',
                             background: `linear-gradient(135deg, ${color}, ${color}dd)`,
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '20px',
+                            fontSize: 'clamp(16px, 4vw, 20px)',
                             fontWeight: '700',
                             color: 'white',
-                            boxShadow: `0 4px 12px ${color}30`
+                            boxShadow: `0 4px 12px ${color}30`,
+                            flexShrink: 0
                           }}>
                             #{index + 1}
                           </div>
                           
                           <div style={{
-                            fontSize: '24px',
-                            marginRight: '8px'
+                            fontSize: 'clamp(20px, 6vw, 24px)',
+                            marginRight: 'clamp(6px, 2vw, 8px)',
+                            flexShrink: 0
                           }}>
                             {icon}
                           </div>
@@ -2104,7 +2214,7 @@ const AdminDashboard = () => {
                           <div style={{ flex: 1 }}>
                             <div style={{
                               color: 'white',
-                              fontSize: '16px',
+                              fontSize: 'clamp(14px, 3.5vw, 16px)',
                               fontWeight: '700',
                               marginBottom: '4px'
                             }}>
@@ -2112,7 +2222,7 @@ const AdminDashboard = () => {
                             </div>
                             <div style={{
                               color: 'rgba(255,255,255,0.7)',
-                              fontSize: '14px',
+                              fontSize: 'clamp(12px, 3vw, 14px)',
                               fontWeight: '500'
                             }}>
                               {subject.totalDownloads.toLocaleString()} downloads • {subject.pyqCount} PYQs
@@ -2165,6 +2275,176 @@ const AdminDashboard = () => {
                 </div>
               </div>
 
+            </motion.div>
+          )}
+
+          {activeModule === 'messages' && (
+            <motion.div
+              key="messages"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4 }}
+              style={{
+                background: 'rgba(255, 255, 255, 0.1)',
+                backdropFilter: 'blur(20px)',
+                border: '1px solid rgba(255, 255, 255, 0.2)',
+                borderRadius: '16px',
+                padding: '32px',
+                marginBottom: '40px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h3 style={{ 
+                  color: 'white', 
+                  fontSize: '1.5rem', 
+                  fontWeight: '700',
+                  margin: 0
+                }}>
+                  Contact Messages ({contactMessages.length})
+                </h3>
+                <motion.button
+                  onClick={handleCloseModule}
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.1)',
+                    border: '1px solid rgba(255, 255, 255, 0.3)',
+                    borderRadius: '8px',
+                    padding: '8px',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: '1rem',
+                    width: '32px',
+                    height: '32px'
+                  }}
+                >
+                  ✕
+                </motion.button>
+              </div>
+              
+              {contactMessages.length > 0 ? (
+                <div style={{ display: 'grid', gap: '16px' }}>
+                  {contactMessages.map((message) => (
+                    <div
+                      key={message._id}
+                      style={{
+                        background: message.status === 'unread' ? 'rgba(255, 107, 107, 0.1)' : 'rgba(255, 255, 255, 0.05)',
+                        border: `1px solid ${message.status === 'unread' ? 'rgba(255, 107, 107, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
+                        borderRadius: '12px',
+                        padding: '20px'
+                      }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                        <div>
+                          <div style={{ color: 'white', fontWeight: '600', fontSize: '1.1rem', marginBottom: '4px' }}>
+                            {message.name} - {message.subject}
+                          </div>
+                          <div style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem' }}>
+                            {message.email} • {new Date(message.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', gap: '8px' }}>
+                          <span style={{
+                            background: message.status === 'unread' ? '#ff6b6b' : message.status === 'replied' ? '#48bb78' : '#4a90e2',
+                            padding: '4px 12px',
+                            borderRadius: '20px',
+                            fontSize: '0.8rem',
+                            fontWeight: '600',
+                            color: 'white'
+                          }}>
+                            {message.status === 'unread' ? '🔴 Unread' : message.status === 'replied' ? '✅ Replied' : '👀 Read'}
+                          </span>
+                        </div>
+                      </div>
+                      
+                      <div style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.95rem', marginBottom: '16px', lineHeight: '1.5' }}>
+                        {message.message}
+                      </div>
+                      
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <motion.button
+                          onClick={() => setViewingMessage(message)}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{
+                            background: '#4a90e2',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '10px 16px',
+                            color: 'white',
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          👀 View Details
+                        </motion.button>
+                        
+                        {message.status === 'unread' && (
+                          <motion.button
+                            onClick={async () => {
+                              try {
+                                await ContactAPI.updateMessage(message._id, { status: 'read' })
+                                fetchContactMessages()
+                                fetchDashboardData()
+                              } catch (error) {
+                                showToast('Failed to mark as read', 'error')
+                              }
+                            }}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            style={{
+                              background: '#48bb78',
+                              border: 'none',
+                              borderRadius: '8px',
+                              padding: '10px 16px',
+                              color: 'white',
+                              fontSize: '0.9rem',
+                              fontWeight: '600',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✓ Mark as Read
+                          </motion.button>
+                        )}
+                        
+                        <motion.button
+                          onClick={async () => {
+                            try {
+                              await ContactAPI.deleteMessage(message._id)
+                              fetchContactMessages()
+                              fetchDashboardData()
+                              showToast('Message deleted successfully', 'success')
+                            } catch (error) {
+                              showToast('Failed to delete message', 'error')
+                            }
+                          }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          style={{
+                            background: '#ef4444',
+                            border: 'none',
+                            borderRadius: '8px',
+                            padding: '10px 16px',
+                            color: 'white',
+                            fontSize: '0.9rem',
+                            fontWeight: '600',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          🗑️ Delete
+                        </motion.button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'rgba(255,255,255,0.7)' }}>
+                  <div style={{ fontSize: '3rem', marginBottom: '16px' }}>💬</div>
+                  <div style={{ fontSize: '1.1rem', fontWeight: '600' }}>No contact messages yet.</div>
+                </div>
+              )}
             </motion.div>
           )}
 
@@ -2333,6 +2613,188 @@ const AdminDashboard = () => {
           )}
         </AnimatePresence>
       </div>
+
+      {/* Contact Message Details Modal */}
+      {viewingMessage && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0, 0, 0, 0.8)',
+          zIndex: 2500,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '20px'
+        }}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            style={{
+              background: 'rgba(255, 255, 255, 0.1)',
+              backdropFilter: 'blur(20px)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '16px',
+              padding: '32px',
+              maxWidth: '600px',
+              width: '90%',
+              maxHeight: '80vh',
+              overflow: 'auto'
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{
+                color: 'white',
+                fontSize: '1.5rem',
+                fontWeight: '700',
+                margin: 0
+              }}>
+                💬 Message Details
+              </h3>
+              <motion.button
+                onClick={() => setViewingMessage(null)}
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.1)',
+                  border: '1px solid rgba(255, 255, 255, 0.3)',
+                  borderRadius: '8px',
+                  padding: '8px',
+                  color: 'white',
+                  cursor: 'pointer',
+                  fontSize: '1rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  width: '32px',
+                  height: '32px'
+                }}
+              >
+                ✕
+              </motion.button>
+            </div>
+            
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'grid', gap: '16px', marginBottom: '24px' }}>
+                <div>
+                  <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', fontWeight: '600' }}>From:</label>
+                  <div style={{ color: 'white', fontSize: '1.1rem', fontWeight: '600' }}>
+                    {viewingMessage.name} ({viewingMessage.email})
+                  </div>
+                </div>
+                
+                <div>
+                  <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', fontWeight: '600' }}>Subject:</label>
+                  <div style={{ color: 'white', fontSize: '1.1rem', fontWeight: '600' }}>
+                    {viewingMessage.subject}
+                  </div>
+                </div>
+                
+                <div>
+                  <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', fontWeight: '600' }}>Date:</label>
+                  <div style={{ color: 'white', fontSize: '1rem' }}>
+                    {new Date(viewingMessage.createdAt).toLocaleString()}
+                  </div>
+                </div>
+                
+                <div>
+                  <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', fontWeight: '600' }}>Status:</label>
+                  <div>
+                    <span style={{
+                      background: viewingMessage.status === 'unread' ? '#ff6b6b' : viewingMessage.status === 'replied' ? '#48bb78' : '#4a90e2',
+                      padding: '6px 16px',
+                      borderRadius: '20px',
+                      fontSize: '0.9rem',
+                      fontWeight: '600',
+                      color: 'white'
+                    }}>
+                      {viewingMessage.status === 'unread' ? '🔴 Unread' : viewingMessage.status === 'replied' ? '✅ Replied' : '👀 Read'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <div>
+                <label style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.9rem', fontWeight: '600', marginBottom: '8px', display: 'block' }}>Message:</label>
+                <div style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  borderRadius: '12px',
+                  padding: '20px',
+                  color: 'white',
+                  fontSize: '1rem',
+                  lineHeight: '1.6',
+                  whiteSpace: 'pre-wrap'
+                }}>
+                  {viewingMessage.message}
+                </div>
+              </div>
+            </div>
+            
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+              {viewingMessage.status === 'unread' && (
+                <motion.button
+                  onClick={async () => {
+                    try {
+                      await ContactAPI.updateMessage(viewingMessage._id, { status: 'read' })
+                      setViewingMessage({ ...viewingMessage, status: 'read' })
+                      fetchContactMessages()
+                      fetchDashboardData()
+                      showToast('Message marked as read', 'success')
+                    } catch (error) {
+                      showToast('Failed to mark as read', 'error')
+                    }
+                  }}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  style={{
+                    background: '#48bb78',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '12px 20px',
+                    color: 'white',
+                    fontSize: '0.9rem',
+                    fontWeight: '600',
+                    cursor: 'pointer'
+                  }}
+                >
+                  ✓ Mark as Read
+                </motion.button>
+              )}
+              
+              <motion.button
+                onClick={async () => {
+                  try {
+                    await ContactAPI.deleteMessage(viewingMessage._id)
+                    setViewingMessage(null)
+                    fetchContactMessages()
+                    fetchDashboardData()
+                    showToast('Message deleted successfully', 'success')
+                  } catch (error) {
+                    showToast('Failed to delete message', 'error')
+                  }
+                }}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                style={{
+                  background: '#ef4444',
+                  border: 'none',
+                  borderRadius: '8px',
+                  padding: '12px 20px',
+                  color: 'white',
+                  fontSize: '0.9rem',
+                  fontWeight: '600',
+                  cursor: 'pointer'
+                }}
+              >
+                🗑️ Delete Message
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Subject PYQs Modal */}
       {viewingSubject && (

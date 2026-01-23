@@ -61,7 +61,7 @@ function AppContent() {
       minHeight: '100vh',
       visibility: 'visible'
     }}>
-      {isAuthenticated && <Navbar />}
+      {isAuthenticated && !location.pathname.startsWith('/admin') && <Navbar />}
       <main>
         {!isAuthenticated ? (
           <Routes>
@@ -73,11 +73,12 @@ function AppContent() {
             <Route path="/browse" element={<Browse />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/*" element={<AdminDashboard />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         )}
       </main>
-      {isAuthenticated && <Footer />}
+      {isAuthenticated && !location.pathname.startsWith('/admin') && <Footer />}
     </div>
   )
 }

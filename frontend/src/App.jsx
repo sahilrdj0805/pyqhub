@@ -16,6 +16,34 @@ function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => AuthService.isAuthenticated())
   const location = useLocation()
 
+  // Listen for authentication changes
+  useEffect(() => {
+    const checkAuth = () => {
+      const authStatus = AuthService.isAuthenticated()
+      setIsAuthenticated(authStatus)
+    }
+
+    // Check auth on location change
+    checkAuth()
+
+    // Listen for storage changes
+    const handleStorageChange = (e) => {
+      if (e.key === 'pyq_token' || e.key === 'pyq_user') {
+        checkAuth()
+      }
+    }
+
+    window.addEventListener('storage', handleStorageChange)
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange)
+    }
+  }, [location.pathname])
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [location.pathname])
   useEffect(() => {
     // Disable browser back/forward buttons more aggressively
     const preventNavigation = () => {
@@ -72,12 +100,12 @@ function AppContent() {
         ) : (
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Navigate to="/admin" replace />} />
             <Route path="/browse" element={<Browse />} />
             <Route path="/upload" element={<Upload />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         )}
       </main>

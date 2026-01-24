@@ -103,21 +103,20 @@ const Auth = () => {
           exit={{ opacity: 0, y: -50, scale: 0.9 }}
           style={{
             position: 'fixed',
-            top: '20%',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            top: '5%',
+            left: '20px',
+            right: '20px',
             zIndex: 9999,
             background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95))',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(239, 68, 68, 0.6)',
             color: 'white',
-            padding: '16px 24px',
+            padding: '12px 16px',
             borderRadius: '12px',
-            fontSize: '0.95rem',
+            fontSize: '0.9rem',
             fontWeight: '600',
             textAlign: 'center',
-            boxShadow: '0 8px 25px rgba(239, 68, 68, 0.4), 0 0 0 1px rgba(255,255,255,0.1)',
-            minWidth: '300px'
+            boxShadow: '0 8px 25px rgba(239, 68, 68, 0.4), 0 0 0 1px rgba(255,255,255,0.1)'
           }}
         >
           🚫 {error}
@@ -132,21 +131,20 @@ const Auth = () => {
           exit={{ opacity: 0, y: -50, scale: 0.9 }}
           style={{
             position: 'fixed',
-            top: '20%',
-            left: '50%',
-            transform: 'translateX(-50%)',
+            top: '5%',
+            left: '20px',
+            right: '20px',
             zIndex: 9999,
             background: 'linear-gradient(135deg, rgba(72, 187, 120, 0.95), rgba(56, 161, 105, 0.95))',
             backdropFilter: 'blur(20px)',
             border: '1px solid rgba(72, 187, 120, 0.6)',
             color: 'white',
-            padding: '16px 24px',
+            padding: '12px 16px',
             borderRadius: '12px',
-            fontSize: '0.95rem',
+            fontSize: '0.9rem',
             fontWeight: '600',
             textAlign: 'center',
-            boxShadow: '0 8px 25px rgba(72, 187, 120, 0.4), 0 0 0 1px rgba(255,255,255,0.1)',
-            minWidth: '300px'
+            boxShadow: '0 8px 25px rgba(72, 187, 120, 0.4), 0 0 0 1px rgba(255,255,255,0.1)'
           }}
         >
           {success}

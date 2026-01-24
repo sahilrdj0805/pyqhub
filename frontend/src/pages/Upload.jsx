@@ -110,19 +110,19 @@ const Upload = () => {
   }
 
   return (
-    <div style={{ minHeight: '100vh', paddingTop: '120px', paddingBottom: '50px' }}>
+    <div style={{ minHeight: '100vh', paddingTop: '60px', paddingBottom: '20px' }}>
       <div className="container">
         {/* Header */}
         <motion.div 
-          style={{ textAlign: 'center', marginBottom: '60px' }}
+          style={{ textAlign: 'center', marginBottom: '20px' }}
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8 }}
         >
-          <h1 style={{ fontSize: '4rem', fontWeight: '900', color: 'white', marginBottom: '20px' }}>
+          <h1 style={{ fontSize: '2.5rem', fontWeight: '900', color: 'white', marginBottom: '10px' }}>
             <span className="gradient-text">Upload</span> Question Paper
           </h1>
-          <p style={{ fontSize: '1.2rem', color: 'rgba(255,255,255,0.8)', maxWidth: '600px', margin: '0 auto' }}>
+          <p style={{ fontSize: '1rem', color: 'rgba(255,255,255,0.8)', maxWidth: '600px', margin: '0 auto' }}>
             Contribute to the community by sharing previous year question papers
           </p>
         </motion.div>
@@ -135,7 +135,7 @@ const Upload = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.2 }}
         >
-          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+          <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
             {/* File Upload Area */}
             <div>
               <label style={{ display: 'block', marginBottom: '12px', fontWeight: '600', color: 'white', fontSize: '1.1rem' }}>
@@ -152,19 +152,19 @@ const Upload = () => {
                   whileHover={{ scale: 1.02 }}
                   style={{
                     border: `2px dashed ${dragActive ? '#667eea' : 'rgba(255,255,255,0.3)'}`,
-                    borderRadius: '20px',
-                    padding: '60px 20px',
+                    borderRadius: '15px',
+                    padding: '30px 15px',
                     textAlign: 'center',
                     cursor: 'pointer',
                     transition: 'all 0.3s ease',
                     background: dragActive ? 'rgba(102, 126, 234, 0.1)' : 'rgba(255,255,255,0.05)'
                   }}
                 >
-                  <div style={{ fontSize: '4rem', marginBottom: '20px' }}>📤</div>
-                  <h3 style={{ fontSize: '1.3rem', fontWeight: '600', color: 'white', marginBottom: '10px' }}>
+                  <div style={{ fontSize: '2.5rem', marginBottom: '10px' }}>📤</div>
+                  <h3 style={{ fontSize: '1.1rem', fontWeight: '600', color: 'white', marginBottom: '5px' }}>
                     Drop your PDF here or click to browse
                   </h3>
-                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '1rem' }}>
+                  <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: '0.85rem' }}>
                     Supports PDF files up to 10MB
                   </p>
                   <input
@@ -226,7 +226,7 @@ const Upload = () => {
             </div>
 
             {/* Form Fields */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
               <div>
                 <label style={{ display: 'block', marginBottom: '8px', fontWeight: '600', color: 'white' }}>
                   📝 Paper Title
@@ -238,12 +238,12 @@ const Upload = () => {
                   placeholder="e.g., Mathematics Final Exam 2023"
                   style={{
                     width: '100%',
-                    padding: '15px 20px',
-                    borderRadius: '15px',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
                     border: '1px solid rgba(255,255,255,0.2)',
                     background: 'rgba(255,255,255,0.1)',
                     color: 'white',
-                    fontSize: '16px',
+                    fontSize: '15px',
                     backdropFilter: 'blur(10px)',
                     outline: 'none'
                   }}
@@ -263,12 +263,12 @@ const Upload = () => {
                   list="subjects-list"
                   style={{
                     width: '100%',
-                    padding: '15px 20px',
-                    borderRadius: '15px',
+                    padding: '10px 14px',
+                    borderRadius: '10px',
                     border: '1px solid rgba(255,255,255,0.2)',
                     background: 'rgba(255,255,255,0.1)',
                     color: 'white',
-                    fontSize: '16px',
+                    fontSize: '15px',
                     backdropFilter: 'blur(10px)',
                     outline: 'none'
                   }}
@@ -296,13 +296,13 @@ const Upload = () => {
                 min="2000"
                 max={new Date().getFullYear()}
                 style={{
-                  width: '200px',
-                  padding: '15px 20px',
-                  borderRadius: '15px',
+                  width: '180px',
+                  padding: '10px 14px',
+                  borderRadius: '10px',
                   border: '1px solid rgba(255,255,255,0.2)',
                   background: 'rgba(255,255,255,0.1)',
                   color: 'white',
-                  fontSize: '16px',
+                  fontSize: '15px',
                   backdropFilter: 'blur(10px)',
                   outline: 'none'
                 }}
@@ -343,16 +343,16 @@ const Upload = () => {
               whileHover={{ scale: uploading ? 1 : 1.05 }}
               whileTap={{ scale: uploading ? 1 : 0.95 }}
               style={{
-                padding: '18px 40px',
-                borderRadius: '50px',
+                padding: '12px 30px',
+                borderRadius: '30px',
                 border: 'none',
                 background: uploading || !file ? 'rgba(255,255,255,0.2)' : 'var(--primary-gradient)',
                 color: 'white',
-                fontSize: '18px',
+                fontSize: '15px',
                 fontWeight: '600',
                 cursor: uploading || !file ? 'not-allowed' : 'pointer',
                 transition: 'all 0.3s ease',
-                boxShadow: uploading || !file ? 'none' : '0 10px 30px rgba(102, 126, 234, 0.4)'
+                boxShadow: uploading || !file ? 'none' : '0 6px 20px rgba(102, 126, 234, 0.4)'
               }}
             >
               {uploading ? (

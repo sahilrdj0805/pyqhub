@@ -359,7 +359,7 @@ const Browse = () => {
                         await axios.get('/api/payment/check-credits', {
                           headers: { Authorization: `Bearer ${AuthService.getToken()}` }
                         })
-                        const proxyUrl = `/api/pdf/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}&token=${AuthService.getToken()}`
+                        const proxyUrl = `${import.meta.env.VITE_API_URL || ''}/api/pdf/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}&token=${AuthService.getToken()}`
                         setSelectedPdf(proxyUrl)
                         // Trigger navbar update slightly after to simulate the backend deduction
                         setTimeout(() => window.dispatchEvent(new Event('creditsUpdated')), 500)
@@ -382,7 +382,7 @@ const Browse = () => {
                         await axios.get('/api/payment/check-credits', {
                           headers: { Authorization: `Bearer ${AuthService.getToken()}` }
                         })
-                        const downloadUrl = `/api/download/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}&filename=${encodeURIComponent(pyq.title + '.pdf')}&token=${AuthService.getToken()}`
+                        const downloadUrl = `${import.meta.env.VITE_API_URL || ''}/api/download/${pyq._id}?url=${encodeURIComponent(pyq.fileUrl)}&filename=${encodeURIComponent(pyq.title + '.pdf')}&token=${AuthService.getToken()}`
                         window.location.href = downloadUrl
                         // Trigger navbar update
                         setTimeout(() => window.dispatchEvent(new Event('creditsUpdated')), 500)

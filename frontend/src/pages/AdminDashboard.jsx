@@ -218,7 +218,10 @@ const AdminDashboard = () => {
     finally { setUploading(false) }
   }
 
-  const viewPDF = (url, id) => window.open(`/api/pdf/${id||'req'}?url=${encodeURIComponent(url)}`, '_blank')
+  const viewPDF = (url, id) => {
+    const backendUrl = import.meta.env.VITE_API_URL || ''
+    window.open(`${backendUrl}/api/pdf/${id||'req'}?url=${encodeURIComponent(url)}&token=${AuthService.getToken()}`, '_blank')
+  }
 
   const handleViewMessage = async (msg) => {
     setViewMsg(msg)

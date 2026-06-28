@@ -24,6 +24,7 @@ const allowedOrigins = [
   'http://localhost:3000', // React dev server
   'http://127.0.0.1:5173', // Alternative localhost
   'http://127.0.0.1:3000', // Alternative localhost
+  'https://pyqhub-snpo.onrender.com', // Production Frontend URL
   // TODO: Add your production frontend URLs here after deployment:
   // 'https://your-pyq-app.vercel.app',
   // 'https://your-pyq-app.netlify.app',

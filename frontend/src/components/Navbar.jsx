@@ -33,23 +33,14 @@ const ShieldIcon = () => (
   </svg>
 )
 
-const MenuIcon = ({ open }) => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    {open
-      ? <><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></>
-      : <><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></>
-    }
-  </svg>
-)
-
 const Navbar = () => {
-  const [scrolled, setScrolled]   = useState(false)
+  const [scrolled, setScrolled]     = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
-  const [user] = useState(() => AuthService.getUser())
+  const [user]    = useState(() => AuthService.getUser())
   const [credits, setCredits] = useState(() => user?.credits ?? null)
-  const [isPro, setIsPro] = useState(() => user?.isPro || false)
-  const location = useLocation()
+  const [isPro, setIsPro]     = useState(() => user?.isPro || false)
+  const location  = useLocation()
   const dropdownRef = useRef(null)
 
   const allItems = [...NAV_ITEMS, ...(user?.role === 'admin' ? [{ name: 'Admin', path: '/admin' }] : [])]
@@ -61,7 +52,7 @@ const Navbar = () => {
     }
     window.addEventListener('scroll', onScroll)
     document.addEventListener('mousedown', onClickOutside)
-    
+
     const fetchCredits = () => {
       if (user && user.role !== 'admin') {
         axios.get('/api/payment/check-credits', {
@@ -78,18 +69,24 @@ const Navbar = () => {
       }
     }
 
-    fetchCredits();
+    fetchCredits()
     window.addEventListener('creditsUpdated', fetchCredits)
 
-    return () => { 
-      window.removeEventListener('scroll', onScroll); 
-      document.removeEventListener('mousedown', onClickOutside);
-      window.removeEventListener('creditsUpdated', fetchCredits);
+    return () => {
+      window.removeEventListener('scroll', onScroll)
+      document.removeEventListener('mousedown', onClickOutside)
+      window.removeEventListener('creditsUpdated', fetchCredits)
     }
-  }, [user, location.pathname]) // also re-fetch when location changes (like after a download)
+  }, [user, location.pathname])
 
-  // Close mobile on route change
-  useEffect(() => setMobileOpen(false), [location.pathname])
+  // Close mobile menu on route change
+  useEffect(() => { setMobileOpen(false); setDropdownOpen(false) }, [location.pathname])
+
+  // Lock body scroll when mobile menu open
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? 'hidden' : ''
+    return () => { document.body.style.overflow = '' }
+  }, [mobileOpen])
 
   const initials = user?.name?.charAt(0)?.toUpperCase() || 'U'
 
@@ -111,7 +108,7 @@ const Navbar = () => {
           </Link>
 
           {/* Desktop links */}
-          <ul className="nav-links" style={{ display: 'flex' }}>
+          <ul className="nav-links">
             {allItems.map((item) => (
               <li key={item.path}>
                 <Link
@@ -125,11 +122,12 @@ const Navbar = () => {
           </ul>
 
           {/* Right side */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="nav-right">
 
-            {/* Credit Badge (Students only) */}
+            {/* Credit Badge (Students only, desktop) */}
             {user && user.role !== 'admin' && (
               <motion.div
+                className="nav-credit-badge"
                 initial={false}
                 animate={{
                   background: isPro ? 'linear-gradient(135deg, #f59e0b, #d97706)' : 'rgba(34,211,238,0.1)',
@@ -137,28 +135,20 @@ const Navbar = () => {
                   color: isPro ? '#fff' : '#22d3ee',
                   boxShadow: isPro ? '0 4px 14px rgba(245,158,11,0.3)' : '0 0 0 rgba(0,0,0,0)'
                 }}
-                style={{ 
-                  padding: '6px 14px',
-                  border: '1px solid',
-                  borderRadius: '100px', 
-                  fontSize: '0.85rem', fontWeight: 700,
-                  display: 'flex', alignItems: 'center', gap: '6px', cursor: 'default',
-                  position: 'relative', overflow: 'hidden'
-                }}
               >
                 <AnimatePresence mode="wait">
                   {isPro ? (
-                    <motion.div key="pro" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <motion.div key="pro" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                       🌟 PRO
                     </motion.div>
                   ) : (
-                    <motion.div key="free" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                    <motion.div key="free" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                       🪙 {credits !== null ? (
-                        <motion.span key={credits} initial={{ scale: 1.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
+                        <motion.span key={credits} initial={{ scale: 1.4, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}>
                           {credits}
                         </motion.span>
                       ) : (
-                        <div style={{ width: '20px', height: '14px', background: 'rgba(34,211,238,0.2)', borderRadius: '4px', animation: 'pulse 1.5s infinite' }} />
+                        <div style={{ width: '20px', height: '12px', background: 'rgba(34,211,238,0.2)', borderRadius: '4px' }} />
                       )} Credits
                     </motion.div>
                   )}
@@ -171,34 +161,20 @@ const Navbar = () => {
               <div ref={dropdownRef} style={{ position: 'relative' }}>
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '6px 12px 6px 6px',
-                    background: 'rgba(255,255,255,0.05)',
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    borderRadius: '100px',
-                    cursor: 'pointer',
-                    transition: 'all 0.2s',
-                    color: 'var(--text-1)',
-                  }}
+                  className="nav-profile-btn"
                 >
-                  <div style={{
-                    width: '28px', height: '28px', borderRadius: '50%',
+                  <div className="nav-avatar" style={{
                     background: user.role === 'admin'
                       ? 'linear-gradient(135deg, #f59e0b, #d97706)'
                       : 'linear-gradient(135deg, #6366f1, #4f46e5)',
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: '12px', fontWeight: '700', color: 'white',
                   }}>
                     {initials}
                   </div>
-                  <span style={{ fontSize: '0.85rem', fontWeight: '500', color: 'var(--text-1)', maxWidth: '100px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {user.name?.split(' ')[0]}
-                  </span>
+                  <span className="nav-username">{user.name?.split(' ')[0]}</span>
                   <motion.span
                     animate={{ rotate: dropdownOpen ? 180 : 0 }}
                     transition={{ duration: 0.2 }}
-                    style={{ color: 'var(--text-3)', display: 'flex' }}
+                    style={{ color: 'var(--text-3)', display: 'flex', flexShrink: 0 }}
                   >
                     <ChevronDown />
                   </motion.span>
@@ -224,6 +200,19 @@ const Navbar = () => {
                     >
                       {/* User info */}
                       <div style={{ padding: '16px', borderBottom: '1px solid var(--border)' }}>
+                        {/* Credits badge in dropdown (mobile sees this too) */}
+                        {user.role !== 'admin' && (
+                          <div style={{
+                            display: 'inline-flex', alignItems: 'center', gap: 5,
+                            padding: '4px 10px', borderRadius: 100, fontSize: '0.72rem', fontWeight: 700,
+                            background: isPro ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'rgba(34,211,238,0.1)',
+                            color: isPro ? '#fff' : '#22d3ee',
+                            border: `1px solid ${isPro ? 'rgba(245,158,11,0.4)' : 'rgba(34,211,238,0.3)'}`,
+                            marginBottom: 10,
+                          }}>
+                            {isPro ? '🌟 PRO' : `🪙 ${credits ?? '…'} Credits`}
+                          </div>
+                        )}
                         <div style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-1)', marginBottom: '2px' }}>
                           {user.name}
                         </div>
@@ -278,56 +267,136 @@ const Navbar = () => {
             {/* Mobile menu toggle */}
             <button
               className="hamburger"
+              aria-label="Toggle menu"
               onClick={() => setMobileOpen(!mobileOpen)}
-              style={{ color: 'var(--text-2)', background: 'none', border: 'none', cursor: 'pointer', display: 'none', padding: '6px' }}
             >
-              <MenuIcon open={mobileOpen} />
+              <motion.div animate={{ rotate: mobileOpen ? 45 : 0, y: mobileOpen ? 7 : 0 }} transition={{ duration: 0.2 }} style={{ width: 20, height: 2, background: 'var(--text-2)', borderRadius: 2 }} />
+              <motion.div animate={{ opacity: mobileOpen ? 0 : 1 }} transition={{ duration: 0.15 }} style={{ width: 20, height: 2, background: 'var(--text-2)', borderRadius: 2 }} />
+              <motion.div animate={{ rotate: mobileOpen ? -45 : 0, y: mobileOpen ? -7 : 0 }} transition={{ duration: 0.2 }} style={{ width: 20, height: 2, background: 'var(--text-2)', borderRadius: 2 }} />
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {mobileOpen && (
+      {/* Mobile Drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <>
+            {/* Backdrop */}
             <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
-              style={{ overflow: 'hidden', borderTop: '1px solid var(--border)', marginTop: '4px' }}
+              key="backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setMobileOpen(false)}
+              style={{
+                position: 'fixed', inset: 0, top: 64,
+                background: 'rgba(0,0,0,0.6)',
+                backdropFilter: 'blur(4px)',
+                zIndex: 998,
+              }}
+            />
+            {/* Drawer */}
+            <motion.div
+              key="drawer"
+              initial={{ x: '100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '100%' }}
+              transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+              style={{
+                position: 'fixed', top: 64, right: 0, bottom: 0,
+                width: 'min(300px, 85vw)',
+                background: 'var(--bg-surface)',
+                borderLeft: '1px solid var(--border)',
+                zIndex: 999,
+                display: 'flex', flexDirection: 'column',
+                overflowY: 'auto',
+              }}
             >
-              <div style={{ padding: '16px 0' }}>
-                {allItems.map((item) => (
-                  <Link
+              {/* User card at top of drawer */}
+              {user && (
+                <div style={{
+                  padding: '20px',
+                  borderBottom: '1px solid var(--border)',
+                  background: 'rgba(99,102,241,0.05)',
+                }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+                    <div style={{
+                      width: 40, height: 40, borderRadius: '50%', flexShrink: 0,
+                      background: user.role === 'admin' ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'linear-gradient(135deg,#6366f1,#4f46e5)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 15, fontWeight: 700, color: 'white',
+                    }}>
+                      {initials}
+                    </div>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ fontWeight: 600, color: 'var(--text-1)', fontSize: '0.9rem', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.name}</div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{user.email}</div>
+                    </div>
+                  </div>
+                  {user.role !== 'admin' && (
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 5,
+                      padding: '5px 12px', borderRadius: 100, fontSize: '0.78rem', fontWeight: 700,
+                      background: isPro ? 'linear-gradient(135deg,#f59e0b,#d97706)' : 'rgba(34,211,238,0.1)',
+                      color: isPro ? '#fff' : '#22d3ee',
+                      border: `1px solid ${isPro ? 'rgba(245,158,11,0.4)' : 'rgba(34,211,238,0.3)'}`,
+                    }}>
+                      {isPro ? '🌟 PRO Member' : `🪙 ${credits ?? '…'} Credits Left`}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Nav Links */}
+              <nav style={{ padding: '12px 8px', flex: 1 }}>
+                {allItems.map((item, i) => (
+                  <motion.div
                     key={item.path}
-                    to={item.path}
-                    style={{
-                      display: 'block', padding: '10px 4px',
-                      color: location.pathname === item.path ? 'var(--blue-lt)' : 'var(--text-2)',
-                      textDecoration: 'none', fontSize: '0.95rem', fontWeight: '500',
-                      borderRadius: 'var(--radius-sm)', transition: 'all 0.15s',
-                    }}
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.04 }}
                   >
-                    {item.name}
-                  </Link>
+                    <Link
+                      to={item.path}
+                      style={{
+                        display: 'flex', alignItems: 'center',
+                        padding: '12px 14px',
+                        color: location.pathname === item.path ? 'var(--blue-lt)' : 'var(--text-2)',
+                        textDecoration: 'none', fontSize: '0.95rem', fontWeight: 500,
+                        borderRadius: 'var(--radius-sm)', transition: 'all 0.15s',
+                        background: location.pathname === item.path ? 'rgba(99,102,241,0.1)' : 'transparent',
+                        marginBottom: 2,
+                      }}
+                    >
+                      {item.name}
+                      {location.pathname === item.path && (
+                        <div style={{ marginLeft: 'auto', width: 6, height: 6, borderRadius: '50%', background: 'var(--blue-lt)' }} />
+                      )}
+                    </Link>
+                  </motion.div>
                 ))}
-                <div style={{ height: '1px', background: 'var(--border)', margin: '12px 0' }} />
+              </nav>
+
+              {/* Sign Out */}
+              <div style={{ padding: '12px 8px 24px', borderTop: '1px solid var(--border)' }}>
                 <button
                   onClick={() => AuthService.logout()}
                   style={{
-                    display: 'flex', alignItems: 'center', gap: '8px',
-                    padding: '10px 4px', background: 'none', border: 'none',
-                    color: '#f87171', fontSize: '0.9rem', fontWeight: '500',
-                    cursor: 'pointer', width: '100%',
+                    display: 'flex', alignItems: 'center', gap: 10, width: '100%',
+                    padding: '12px 14px', borderRadius: 'var(--radius-sm)',
+                    background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.15)',
+                    color: '#f87171', fontSize: '0.9rem', fontWeight: 500,
+                    cursor: 'pointer', transition: 'all 0.15s',
                   }}
                 >
                   <LogOutIcon /> Sign Out
                 </button>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
+          </>
+        )}
+      </AnimatePresence>
     </nav>
   )
 }

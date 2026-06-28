@@ -3,7 +3,7 @@ import AuthService from './AuthService'
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: (import.meta.env.VITE_API_URL || '') + '/api',
   timeout: 10000, // 10 second timeout
   headers: {
     'Content-Type': 'application/json'
@@ -208,9 +208,9 @@ export const AuthAPI = {
   }
 }
 
-// Contact API instance for production
+// separate axios instance for contact
 const contactApi = axios.create({
-  baseURL: '/api',
+  baseURL: (import.meta.env.VITE_API_URL || '') + '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

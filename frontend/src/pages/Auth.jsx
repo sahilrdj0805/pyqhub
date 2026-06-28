@@ -2,645 +2,278 @@ import React, { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AuthAPI } from '../ApiService'
 import AuthService from '../AuthService'
+import { useToast } from '../context/ToastContext'
+
+// ── Icons ──────────────────────────────────────────────
+const UserIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+  </svg>
+)
+const ShieldIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+  </svg>
+)
+const MailIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/>
+  </svg>
+)
+const LockIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+  </svg>
+)
+const EyeIcon = ({ show }) => (
+  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    {show
+      ? <><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></>
+      : <><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></>
+    }
+  </svg>
+)
 
 const Auth = () => {
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [activeTab, setActiveTab] = useState('user')
-  const [formData, setFormData] = useState({ name: '', email: '', password: '' })
+  const [mode, setMode]       = useState('signin')   // 'signin' | 'signup' | 'admin'
+  const [form, setForm]       = useState({ name: '', email: '', password: '' })
+  const [showPw, setShowPw]   = useState(false)
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const { showToast } = useToast()
 
-  const handleInputChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value })
-    setError('')
-    setSuccess('')
+  const isSignup = mode === 'signup'
+  const isAdmin  = mode === 'admin'
+
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
-    setError('')
-
     try {
       let response
-      
-      if (isSignUp) {
-        response = await AuthAPI.signup({
-          name: formData.name,
-          email: formData.email,
-          password: formData.password
-        })
+      if (isSignup) {
+        response = await AuthAPI.signup({ name: form.name, email: form.email, password: form.password })
+      } else if (isAdmin) {
+        response = await AuthAPI.adminLogin({ email: form.email, password: form.password })
       } else {
-        if (activeTab === 'admin') {
-          response = await AuthAPI.adminLogin({
-            email: formData.email,
-            password: formData.password
-          })
-        } else {
-          response = await AuthAPI.signin({
-            email: formData.email,
-            password: formData.password
-          })
-        }
+        response = await AuthAPI.signin({ email: form.email, password: form.password })
       }
-      
-      // Store auth data using AuthService
       AuthService.setToken(response.token)
       AuthService.setUser(response.user)
-      
-      // Show success message
-      const successMsg = isSignUp 
-        ? '🎉 Account created successfully! Redirecting...'
-        : activeTab === 'admin' 
-          ? '🛡️ Admin login successful! Welcome back...'
-          : '✨ Login successful! Welcome back...'
-      
-      setSuccess(successMsg)
-      
-      // Redirect after showing success message
+      showToast(isSignup ? 'Account created! Redirecting…' : 'Welcome back! Redirecting…', 'success')
       setTimeout(() => {
-        window.history.replaceState(null, '', (activeTab === 'admin' && !isSignUp) ? '/admin' : '/')
-        window.location.href = (activeTab === 'admin' && !isSignUp) ? '/admin' : '/'
-      }, 1500)
-    } catch (error) {
-      const errorMsg = error.message === 'Invalid credentials' 
-        ? '🚫 Invalid email or password! Please try again.'
-        : error.message === 'User not found'
-          ? '🚫 Account not found! Please check your email.'
-          : `🚫 ${error.message || 'Authentication failed! Please try again.'}`
-      
-      setError(errorMsg)
+        window.location.href = isAdmin ? '/admin' : '/'
+      }, 1200)
+    } catch (err) {
+      showToast(err.message || 'Something went wrong. Please try again.', 'error')
     } finally {
       setLoading(false)
     }
   }
 
-  const toggleMode = () => {
-    setIsSignUp(!isSignUp)
-    setFormData({ name: '', email: '', password: '' })
-    setError('')
-    setSuccess('')
+  const switchMode = (next) => {
+    setMode(next)
+    setForm({ name: '', email: '', password: '' })
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      display: 'flex', 
-      alignItems: 'center', 
-      justifyContent: 'center',
-      padding: '20px',
-      background: '#0a0a0a',
-      backgroundImage: 'radial-gradient(circle at 25% 25%, #1a1a2e 0%, transparent 50%), radial-gradient(circle at 75% 75%, #16213e 0%, transparent 50%)',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Error Message - Fixed Position */}
-      {error && (
-        <motion.div
-          initial={{ opacity: 0, y: -50, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -50, scale: 0.9 }}
-          style={{
-            position: 'fixed',
-            top: '5%',
-            left: '20px',
-            right: '20px',
-            zIndex: 9999,
-            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.95), rgba(220, 38, 38, 0.95))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(239, 68, 68, 0.6)',
-            color: 'white',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            fontSize: '0.9rem',
-            fontWeight: '600',
-            textAlign: 'center',
-            boxShadow: '0 8px 25px rgba(239, 68, 68, 0.4), 0 0 0 1px rgba(255,255,255,0.1)'
-          }}
-        >
-          🚫 {error}
-        </motion.div>
-      )}
-
-      {/* Success Message - Fixed Position */}
-      {success && (
-        <motion.div
-          initial={{ opacity: 0, y: -50, scale: 0.9 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: -50, scale: 0.9 }}
-          style={{
-            position: 'fixed',
-            top: '5%',
-            left: '20px',
-            right: '20px',
-            zIndex: 9999,
-            background: 'linear-gradient(135deg, rgba(72, 187, 120, 0.95), rgba(56, 161, 105, 0.95))',
-            backdropFilter: 'blur(20px)',
-            border: '1px solid rgba(72, 187, 120, 0.6)',
-            color: 'white',
-            padding: '12px 16px',
-            borderRadius: '12px',
-            fontSize: '0.9rem',
-            fontWeight: '600',
-            textAlign: 'center',
-            boxShadow: '0 8px 25px rgba(72, 187, 120, 0.4), 0 0 0 1px rgba(255,255,255,0.1)'
-          }}
-        >
-          {success}
-        </motion.div>
-      )}
-      {/* Enhanced Background Animation */}
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-        {[...Array(5)].map((_, i) => (
-          <motion.div
-            key={i}
-            style={{
-              position: 'absolute',
-              width: `${150 + i * 50}px`,
-              height: `${150 + i * 50}px`,
-              background: `radial-gradient(circle, rgba(102, 126, 234, ${0.1 - i * 0.02}) 0%, transparent 70%)`,
-              borderRadius: '50%',
-              top: `${10 + i * 20}%`,
-              left: `${5 + i * 25}%`,
-            }}
-            animate={{
-              y: [0, -30, 0],
-              x: [0, 20, 0],
-              scale: [1, 1.2, 1],
-              rotate: [0, 180, 360]
-            }}
-            transition={{
-              duration: 8 + i * 3,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          />
-        ))}
-        
-        {/* Floating particles */}
-        {[...Array(20)].map((_, i) => (
-          <motion.div
-            key={`particle-${i}`}
-            style={{
-              position: 'absolute',
-              width: '4px',
-              height: '4px',
-              background: 'rgba(255, 255, 255, 0.3)',
-              borderRadius: '50%',
-              top: `${Math.random() * 100}%`,
-              left: `${Math.random() * 100}%`,
-            }}
-            animate={{
-              y: [0, -100, 0],
-              opacity: [0, 1, 0]
-            }}
-            transition={{
-              duration: 3 + Math.random() * 4,
-              repeat: Infinity,
-              delay: Math.random() * 2
-            }}
-          />
-        ))}
-      </div>
+    <div className="auth-section">
+      {/* Background blobs */}
+      <div className="blob blob-blue"  style={{ top: '5%',  left: '-15%', opacity: 0.5 }} />
+      <div className="blob blob-cyan" style={{ bottom: '10%', right: '-10%', opacity: 0.4 }} />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.8, y: 50 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        style={{ 
-          width: '100%', 
-          maxWidth: '380px',
-          background: 'rgba(255, 255, 255, 0.03)',
-          backdropFilter: 'blur(25px)',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          borderRadius: '24px',
-          padding: '32px',
-          position: 'relative',
-          zIndex: 1,
-          overflow: 'hidden'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(102, 126, 234, 0.3)'
-          e.currentTarget.style.boxShadow = '0 20px 60px rgba(102, 126, 234, 0.2), inset 0 1px 0 rgba(255,255,255,0.1)'
-          
-          // Add shimmer effect
-          const shimmer = document.createElement('div')
-          shimmer.style.cssText = `
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.1), transparent);
-            animation: shimmer 2s infinite;
-            pointer-events: none;
-            z-index: 1;
-          `
-          e.currentTarget.appendChild(shimmer)
-          
-          setTimeout(() => {
-            if (shimmer.parentNode) shimmer.remove()
-          }, 2000)
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.08)'
-          e.currentTarget.style.boxShadow = 'none'
-        }}
+        className="auth-card"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
       >
-        {/* Floating particles background for container */}
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(circle at 20% 30%, rgba(102, 126, 234, 0.05) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(118, 75, 162, 0.05) 0%, transparent 50%)',
-          borderRadius: '24px',
-          pointerEvents: 'none'
-        }} />
-        
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '24px', position: 'relative', zIndex: 2 }}>
-          <motion.div 
-            whileHover={{ scale: 1.15, rotateY: 15, rotateX: 5 }}
-            whileTap={{ scale: 0.95 }}
-            style={{ 
-              width: '60px', 
-              height: '60px', 
-              background: isSignUp 
-                ? 'linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%)'
-                : activeTab === 'admin' 
-                  ? 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)'
-                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              borderRadius: '18px', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justifyContent: 'center', 
-              fontSize: '2rem',
-              margin: '0 auto 15px',
-              transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
-              transformStyle: 'preserve-3d',
-              boxShadow: '0 8px 25px rgba(102, 126, 234, 0.3)',
-              cursor: 'pointer',
-              position: 'relative',
-              overflow: 'hidden'
-            }}
-            onMouseEnter={(e) => {
-              const shimmer = document.createElement('div')
-              shimmer.style.cssText = `
-                position: absolute;
-                top: -50%;
-                left: -50%;
-                width: 200%;
-                height: 200%;
-                background: linear-gradient(45deg, transparent, rgba(255,255,255,0.4), transparent);
-                animation: shimmer 1.5s infinite;
-                pointer-events: none;
-                z-index: 1;
-              `
-              e.currentTarget.appendChild(shimmer)
-              
-              setTimeout(() => {
-                if (shimmer.parentNode) shimmer.remove()
-              }, 1500)
-            }}
-          >
-            <span style={{ position: 'relative', zIndex: 2 }}>
-              {isSignUp ? '✨' : activeTab === 'admin' ? '🛡️' : '👤'}
-            </span>
-          </motion.div>
-          <h2 style={{ 
-            fontSize: '2rem', 
-            fontWeight: '800', 
-            color: 'white',
-            marginBottom: '10px',
-            textShadow: '0 2px 10px rgba(0, 0, 0, 0.3)'
-          }}>
-            {isSignUp ? 'Join PYQ Hub' : 'Welcome Back'}
-          </h2>
-          <p style={{ 
-            color: 'rgba(255,255,255,0.7)', 
-            fontSize: '0.9rem' 
-          }}>
-            {isSignUp ? 'Create your account' : 'Sign in to continue'}
+        {/* Logo */}
+        <div className="auth-logo">
+          <div className="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ width: '60%', height: '60%', color: 'white' }}>
+              <polygon points="12 2 2 7 12 12 22 7 12 2" />
+              <polyline points="2 17 12 22 22 17" />
+              <polyline points="2 12 12 17 22 12" />
+            </svg>
+          </div>
+          <span className="logo-text">PYQ Hub</span>
+        </div>
+
+        {/* Title */}
+        <div style={{ marginBottom: '24px' }}>
+          <h1 style={{ fontFamily: 'Space Grotesk, sans-serif', fontSize: '1.5rem', fontWeight: 700, color: 'var(--text-1)', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+            {isSignup ? 'Create an account' : isAdmin ? 'Admin sign in' : 'Welcome back'}
+          </h1>
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-3)' }}>
+            {isSignup ? 'Join thousands of students on PYQ Hub' : isAdmin ? 'Restricted to administrators only' : 'Sign in to your account to continue'}
           </p>
         </div>
 
-        {/* Enhanced Tabs - Only show for Sign In */}
-        {!isSignUp && (
-          <div style={{ 
-            display: 'flex', 
-            marginBottom: '25px',
-            background: 'rgba(255, 255, 255, 0.05)',
-            borderRadius: '16px',
-            padding: '6px',
-            position: 'relative',
-            zIndex: 2,
-            border: '1px solid rgba(255, 255, 255, 0.1)'
-          }}>
-            <motion.div
-              style={{
-                position: 'absolute',
-                top: '6px',
-                bottom: '6px',
-                left: activeTab === 'user' ? '6px' : '50%',
-                right: activeTab === 'user' ? '50%' : '6px',
-                background: activeTab === 'admin' 
-                  ? 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)'
-                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                borderRadius: '10px',
-                transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
-                boxShadow: activeTab === 'admin'
-                  ? '0 4px 15px rgba(255, 107, 107, 0.4)'
-                  : '0 4px 15px rgba(102, 126, 234, 0.4)'
-              }}
-              layout
-            />
-            
+        {/* Mode tabs (only for signin/admin) */}
+        {!isSignup && (
+          <div className="auth-tabs" style={{ marginBottom: '24px' }}>
             <button
-              onClick={() => setActiveTab('user')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                background: 'transparent',
-                border: 'none',
-                color: 'white',
-                fontWeight: '600',
-                fontSize: '0.85rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                position: 'relative',
-                zIndex: 1
-              }}
+              className={`auth-tab ${mode === 'signin' ? 'active' : ''}`}
+              onClick={() => switchMode('signin')}
             >
-              👤 User
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                <UserIcon /> Student
+              </span>
             </button>
-            
             <button
-              onClick={() => setActiveTab('admin')}
-              style={{
-                flex: 1,
-                padding: '10px',
-                background: 'transparent',
-                border: 'none',
-                color: 'white',
-                fontWeight: '600',
-                fontSize: '0.85rem',
-                borderRadius: '8px',
-                cursor: 'pointer',
-                position: 'relative',
-                zIndex: 1
-              }}
+              className={`auth-tab ${mode === 'admin' ? 'active' : ''}`}
+              onClick={() => switchMode('admin')}
             >
-              🛡️ Admin
+              <span style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'center' }}>
+                <ShieldIcon /> Admin
+              </span>
             </button>
           </div>
         )}
 
-        {/* Enhanced Form */}
-        <form onSubmit={handleSubmit} style={{ marginBottom: '25px', position: 'relative', zIndex: 2 }}>
+        {/* Admin notice */}
+        {isAdmin && (
+          <div className="alert alert-info" style={{ marginBottom: '20px', fontSize: '0.8rem' }}>
+            <ShieldIcon />
+            <span>Admin access only. Unauthorized attempts are logged.</span>
+          </div>
+        )}
+
+
+
+        {/* Form */}
+        <form onSubmit={handleSubmit}>
           <AnimatePresence mode="wait">
             <motion.div
-              key={isSignUp ? 'signup' : 'signin'}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
+              key={mode}
+              initial={{ opacity: 0, x: 8 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -8 }}
               transition={{ duration: 0.2 }}
-              style={{ minHeight: '140px' }}
             >
-              {isSignUp && (
-                <div style={{ marginBottom: '15px' }}>
-                  <input
-                    type="text"
-                    name="name"
-                    placeholder="Full Name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    required
-                    style={{
-                      width: '100%',
-                      padding: '14px 18px',
-                      background: 'rgba(255, 255, 255, 0.08)',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      borderRadius: '12px',
-                      color: 'white',
-                      fontSize: '0.95rem',
-                      outline: 'none',
-                      transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
-                      position: 'relative'
-                    }}
-                    onFocus={(e) => {
-                      e.target.style.borderColor = '#4ecdc4'
-                      e.target.style.boxShadow = '0 0 0 3px rgba(78, 205, 196, 0.2), 0 8px 25px rgba(78, 205, 196, 0.3)'
-                      e.target.style.background = 'rgba(78, 205, 196, 0.1)'
-                    }}
-                    onBlur={(e) => {
-                      e.target.style.borderColor = 'rgba(255, 255, 255, 0.15)'
-                      e.target.style.boxShadow = 'none'
-                      e.target.style.background = 'rgba(255, 255, 255, 0.08)'
-                    }}
-                  />
+              {/* Name (signup only) */}
+              {isSignup && (
+                <div className="form-group">
+                  <label className="form-label">Full Name</label>
+                  <div style={{ position: 'relative' }}>
+                    <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', display: 'flex' }}>
+                      <UserIcon />
+                    </span>
+                    <input
+                      className="form-input"
+                      style={{ paddingLeft: '38px' }}
+                      type="text"
+                      name="name"
+                      placeholder="Sahil Ahmad"
+                      value={form.name}
+                      onChange={handleChange}
+                      required
+                      autoComplete="name"
+                    />
+                  </div>
                 </div>
               )}
 
-              <div style={{ marginBottom: '15px' }}>
-                <input
-                  type="email"
-                  name="email"
-                  placeholder={!isSignUp && activeTab === 'admin' ? 'Admin Email' : 'Email'}
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '14px 18px',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    borderRadius: '12px',
-                    color: 'white',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                    transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)'
-                  }}
-                  onFocus={(e) => {
-                    const color = isSignUp ? '#4ecdc4' : activeTab === 'admin' ? '#ff6b6b' : '#667eea'
-                    e.target.style.borderColor = color
-                    e.target.style.boxShadow = `0 0 0 3px ${color}30, 0 8px 25px ${color}40`
-                    e.target.style.background = `${color}15`
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.15)'
-                    e.target.style.boxShadow = 'none'
-                    e.target.style.background = 'rgba(255, 255, 255, 0.08)'
-                  }}
-                />
+              {/* Email */}
+              <div className="form-group">
+                <label className="form-label">{isAdmin ? 'Admin Email' : 'Email address'}</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', display: 'flex' }}>
+                    <MailIcon />
+                  </span>
+                  <input
+                    className="form-input"
+                    style={{ paddingLeft: '38px' }}
+                    type="email"
+                    name="email"
+                    placeholder={isAdmin ? 'admin@example.com' : 'you@example.com'}
+                    value={form.email}
+                    onChange={handleChange}
+                    required
+                    autoComplete="email"
+                  />
+                </div>
               </div>
 
-              <div style={{ marginBottom: '20px' }}>
-                <input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  required
-                  style={{
-                    width: '100%',
-                    padding: '14px 18px',
-                    background: 'rgba(255, 255, 255, 0.08)',
-                    border: '1px solid rgba(255, 255, 255, 0.15)',
-                    borderRadius: '12px',
-                    color: 'white',
-                    fontSize: '0.95rem',
-                    outline: 'none',
-                    transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)'
-                  }}
-                  onFocus={(e) => {
-                    const color = isSignUp ? '#4ecdc4' : activeTab === 'admin' ? '#ff6b6b' : '#667eea'
-                    e.target.style.borderColor = color
-                    e.target.style.boxShadow = `0 0 0 3px ${color}30, 0 8px 25px ${color}40`
-                    e.target.style.background = `${color}15`
-                  }}
-                  onBlur={(e) => {
-                    e.target.style.borderColor = 'rgba(255, 255, 255, 0.15)'
-                    e.target.style.boxShadow = 'none'
-                    e.target.style.background = 'rgba(255, 255, 255, 0.08)'
-                  }}
-                />
+              {/* Password */}
+              <div className="form-group" style={{ marginBottom: '20px' }}>
+                <label className="form-label">Password</label>
+                <div style={{ position: 'relative' }}>
+                  <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-3)', display: 'flex' }}>
+                    <LockIcon />
+                  </span>
+                  <input
+                    className="form-input"
+                    style={{ paddingLeft: '38px', paddingRight: '40px' }}
+                    type={showPw ? 'text' : 'password'}
+                    name="password"
+                    placeholder="••••••••"
+                    value={form.password}
+                    onChange={handleChange}
+                    required
+                    autoComplete={isSignup ? 'new-password' : 'current-password'}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPw(!showPw)}
+                    style={{
+                      position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)',
+                      background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-3)',
+                      display: 'flex', padding: '2px',
+                    }}
+                  >
+                    <EyeIcon show={showPw} />
+                  </button>
+                </div>
               </div>
             </motion.div>
           </AnimatePresence>
 
-          {/* Only keep error in form for fallback */}
-
-          <motion.button
+          {/* Submit */}
+          <button
             type="submit"
+            className="btn btn-primary"
             disabled={loading}
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
             style={{
-              width: '100%',
-              padding: '16px',
-              background: isSignUp 
-                ? 'linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%)'
-                : activeTab === 'admin' 
-                  ? 'linear-gradient(135deg, #ff6b6b 0%, #ff8e53 100%)'
-                  : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-              border: 'none',
-              borderRadius: '12px',
-              color: 'white',
-              fontSize: '1.05rem',
-              fontWeight: '700',
-              cursor: loading ? 'not-allowed' : 'pointer',
+              width: '100%', justifyContent: 'center',
+              padding: '13px',
+              fontSize: '0.95rem',
               opacity: loading ? 0.7 : 1,
-              transition: 'all 0.6s cubic-bezier(0.23, 1, 0.32, 1)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '10px',
-              position: 'relative',
-              overflow: 'hidden',
-              boxShadow: isSignUp 
-                ? '0 8px 25px rgba(255, 107, 107, 0.4)'
-                : activeTab === 'admin' 
-                  ? '0 8px 25px rgba(255, 107, 107, 0.4)'
-                  : '0 8px 25px rgba(102, 126, 234, 0.4)'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                const shimmer = document.createElement('div')
-                shimmer.style.cssText = `
-                  position: absolute;
-                  top: 0;
-                  left: -100%;
-                  width: 100%;
-                  height: 100%;
-                  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-                  animation: buttonShimmer 0.8s ease-out;
-                  pointer-events: none;
-                `
-                e.currentTarget.appendChild(shimmer)
-                setTimeout(() => shimmer.remove(), 800)
-              }
+              cursor: loading ? 'not-allowed' : 'pointer',
+              background: isAdmin ? 'linear-gradient(135deg, #f59e0b, #d97706)' : undefined,
+              boxShadow: isAdmin ? '0 0 20px rgba(245,158,11,0.3)' : undefined,
             }}
           >
             {loading ? (
               <>
-                <div style={{ 
-                  width: '16px', 
-                  height: '16px', 
-                  border: '2px solid rgba(255,255,255,0.3)', 
-                  borderTop: '2px solid white', 
-                  borderRadius: '50%', 
-                  animation: 'spin 1s linear infinite' 
-                }} />
-                {isSignUp ? 'Creating...' : 'Signing In...'}
+                <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }} />
+                {isSignup ? 'Creating account…' : 'Signing in…'}
               </>
             ) : (
-              <>
-                {isSignUp ? '🚀 Create Account' : `🔑 Sign In${activeTab === 'admin' ? ' as Admin' : ''}`}
-              </>
+              isSignup ? 'Create account' : isAdmin ? 'Sign in as Admin' : 'Sign in'
             )}
-          </motion.button>
+          </button>
         </form>
 
-        {/* Toggle Mode */}
-        <div style={{ textAlign: 'center', paddingTop: '15px', borderTop: '1px solid rgba(255, 255, 255, 0.2)' }}>
-          <p style={{ color: 'rgba(255,255,255,0.7)', marginBottom: '10px', fontSize: '0.85rem' }}>
-            {isSignUp ? 'Already have an account?' : "Don't have an account?"}
-          </p>
-          <motion.button
-            onClick={toggleMode}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            style={{
-              background: 'transparent',
-              border: '1px solid rgba(255, 255, 255, 0.3)',
-              color: 'white',
-              padding: '8px 20px',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontWeight: '600',
-              fontSize: '0.85rem',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.borderColor = isSignUp ? '#4a90e2' : '#4ecdc4'
-              e.target.style.background = isSignUp ? 'rgba(74, 144, 226, 0.1)' : 'rgba(78, 205, 196, 0.1)'
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.borderColor = 'rgba(255, 255, 255, 0.3)'
-              e.target.style.background = 'transparent'
-            }}
-          >
-            {isSignUp ? '🔑 Sign In' : '✨ Sign Up'}
-          </motion.button>
-        </div>
+        {/* Footer toggle */}
+        {!isAdmin && (
+          <>
+            <div className="auth-divider" style={{ marginTop: '24px' }}>
+              <span>{isSignup ? 'Already have an account?' : "Don't have an account?"}</span>
+            </div>
+            <button
+              onClick={() => switchMode(isSignup ? 'signin' : 'signup')}
+              className="btn btn-ghost"
+              style={{ width: '100%', justifyContent: 'center', marginTop: '4px' }}
+            >
+              {isSignup ? 'Sign in instead' : 'Create a free account'}
+            </button>
+          </>
+        )}
       </motion.div>
-
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-        @keyframes shimmer {
-          0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-          100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.5; }
-          50% { opacity: 0.8; }
-        }
-        @keyframes focusShimmer {
-          0% { left: -100%; }
-          100% { left: 100%; }
-        }
-        @keyframes buttonShimmer {
-          0% { left: -100%; }
-          100% { left: 100%; }
-        }
-      `}</style>
     </div>
   )
 }

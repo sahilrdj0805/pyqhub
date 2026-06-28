@@ -7,8 +7,11 @@ import adminRoutes from './routes/adminRoutes.js';
 import uploadRequestRoutes from './routes/uploadRequestRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import contactRoutes from './routes/contactRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 import connectDB from './config/db.js';
 import axios from 'axios';
+import { protect } from './middlewares/auth.js';
+import User from './models/User.js';
 
 dotenv.config();
 
@@ -57,11 +60,21 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // PDF Proxy Route for proper viewing
-app.get('/api/pdf/:id', async (req, res) => {
+app.get('/api/pdf/:id', protect, async (req, res) => {
   try {
     const { url } = req.query;
     if (!url) {
       return res.status(400).json({ error: 'PDF URL is required' });
+    }
+
+    // Check credits
+    const user = await User.findById(req.user.id);
+    if (!user.isPro) {
+      if (user.credits < 50) {
+        return res.status(402).json({ error: 'Out of credits. Please upgrade to Pro.' });
+      }
+      user.credits -= 50;
+      await user.save();
     }
     
     // Fetch PDF from Cloudinary
@@ -82,11 +95,21 @@ app.get('/api/pdf/:id', async (req, res) => {
 });
 
 // PDF Download Route for forcing download
-app.get('/api/download/:id', async (req, res) => {
+app.get('/api/download/:id', protect, async (req, res) => {
   try {
     const { url, filename } = req.query;
     if (!url) {
       return res.status(400).json({ error: 'PDF URL is required' });
+    }
+    
+    // Check credits
+    const user = await User.findById(req.user.id);
+    if (!user.isPro) {
+      if (user.credits < 50) {
+        return res.status(402).json({ error: 'Out of credits. Please upgrade to Pro.' });
+      }
+      user.credits -= 50;
+      await user.save();
     }
     
     // Increment download count for this PYQ
@@ -134,6 +157,7 @@ app.use('/api/pyqs', pyqRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload-requests', uploadRequestRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/payment', paymentRoutes);
 
 // Public stats endpoint
 app.get('/api/stats', async (req, res) => {
@@ -148,14 +172,12 @@ app.get('/api/stats', async (req, res) => {
     ]);
 
     const totalDownloads = totalDownloadsResult.length > 0 ? totalDownloadsResult[0].totalDownloads : 0;
-    const rating = 4.9; // Static rating for now
 
     res.json({
       totalUsers,
       totalSubjects,
       totalPYQs,
       totalDownloads,
-      rating
     });
   } catch (error) {
     res.status(500).json({ message: error.message });

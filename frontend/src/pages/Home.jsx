@@ -2,343 +2,257 @@ import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import axios from 'axios'
+import SEO from '../components/SEO'
+
+const fadeUp = {
+  hidden: { opacity: 0, y: 24 },
+  show: (i = 0) => ({
+    opacity: 1, y: 0,
+    transition: { duration: 0.5, delay: i * 0.1, ease: [0.4, 0, 0.2, 1] }
+  })
+}
+
+const features = [
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+      </svg>
+    ),
+    title: 'Smart Search',
+    desc: 'Find papers by subject, year, or keyword instantly. Filter and sort to narrow down exactly what you need.'
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    ),
+    title: 'Community Uploads',
+    desc: 'Students contribute papers, admin team reviews and approves. Quality-controlled, community-powered.'
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+    ),
+    title: 'Verified Content',
+    desc: 'Every paper goes through admin review before being published. No spam, no duplicates — only real papers.'
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+    ),
+    title: 'One-Click Download',
+    desc: 'View PDFs inline or download instantly using your free credits, or upgrade to PRO for unlimited access.'
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+      </svg>
+    ),
+    title: 'Secure PRO Tier',
+    desc: 'Dual payment gateways integrated securely. Pay with Stripe internationally or Razorpay via UPI in India.'
+  },
+  {
+    icon: (
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    ),
+    title: 'Growing Community',
+    desc: 'Students helping students. Join hundreds of users who are already sharing and downloading papers.'
+  }
+]
+
+const CheckIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"/>
+  </svg>
+)
 
 const Home = () => {
-  const [stats, setStats] = useState({
-    totalUsers: 0,
-    totalSubjects: 0,
-    totalPYQs: 0,
-    rating: 4.9
-  })
+  const [stats, setStats] = useState({ totalUsers: 0, totalSubjects: 0, totalPYQs: 0, totalDownloads: 0, rating: 4.9 })
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    fetchStats()
-  }, [])
+  useEffect(() => { fetchStats() }, [])
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('https://pyqproject-backend.onrender.com/api/stats')
-      setStats(response.data)
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-      // Set fallback stats if API fails
-      setStats({
-        totalUsers: 150,
-        totalSubjects: 25,
-        totalPYQs: 500,
-        rating: 4.9
-      })
+      const { data } = await axios.get('/api/stats')
+      setStats(data)
+    } catch {
+      setStats({ totalUsers: 120, totalSubjects: 18, totalPYQs: 340, totalDownloads: 2100, rating: 4.9 })
     } finally {
       setLoading(false)
     }
   }
 
-  const formatNumber = (num) => {
-    if (num >= 1000) {
-      return (num / 1000).toFixed(1) + 'K+'
-    }
-    return num + '+'
-  }
+  const fmt = (n) => n >= 1000 ? (n / 1000).toFixed(1) + 'K' : String(n)
 
   return (
-    <div className="min-h-screen">
+    <div className="home-page">
+      <SEO />
+      
       {/* Hero Section */}
       <section className="hero-section">
-        {/* Floating Elements */}
-        <div className="floating-element floating-1"></div>
-        <div className="floating-element floating-2"></div>
-        <div className="floating-element floating-3"></div>
-        
-        <div className="hero-content">
-          <motion.h1 
-            className="hero-title"
-            initial={{ opacity: 0, y: 50 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8 }}
-          >
-            <span className="gradient-text">PYQ Hub</span>
-            <br />
-            <span style={{ color: 'white' }}>Excellence</span>
-          </motion.h1>
-          
-          <motion.p 
-            className="hero-subtitle"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.2 }}
-          >
-            Your ultimate destination for accessing, sharing, and discovering previous year question papers. 
-            Ace your exams with our comprehensive collection.
-          </motion.p>
-          
-          <motion.div 
-            className="hero-buttons"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.4 }}
-          >
-            <Link to="/browse" className="btn btn-primary">
-              🔍 Browse Question Papers
-            </Link>
-            <Link to="/upload" className="btn btn-secondary">
-              📤 Upload Paper
-            </Link>
+        {/* subtle blobs */}
+        <div className="blob blob-blue" style={{ top: '10%', left: '-10%', opacity: 0.6 }} />
+        <div className="blob blob-cyan" style={{ bottom: '20%', right: '-5%', opacity: 0.5 }} />
+
+        <div className="container" style={{ position: 'relative', zIndex: 1 }}>
+          <motion.div className="hero-content" initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.1 } } }}>
+
+            <motion.div className="hero-eyebrow" variants={fadeUp}>
+              <span className="hero-eyebrow-dot" />
+              <span>Previous Year Question Papers</span>
+            </motion.div>
+
+            <motion.h1 className="hero-title" variants={fadeUp} custom={1}>
+              Study Smarter,<br />
+              <span className="gradient-text">Score Higher.</span>
+            </motion.h1>
+
+            <motion.p className="hero-subtitle" variants={fadeUp} custom={2}>
+              Access a curated library of previous year question papers. Get 500 free credits on sign up,
+              download instantly, and upgrade to PRO for unlimited access.
+            </motion.p>
+
+            <motion.div className="hero-buttons" variants={fadeUp} custom={3}>
+              <Link to="/browse" className="btn btn-primary btn-lg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+                </svg>
+                Browse Papers
+              </Link>
+              <Link to="/upload" className="btn btn-secondary btn-lg">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+                Upload a Paper
+              </Link>
+            </motion.div>
+
+            <motion.div className="hero-meta" variants={fadeUp} custom={4}>
+              {['500 Free Credits', 'Admin-verified papers', 'Premium PRO Tier'].map((t) => (
+                <div className="hero-meta-item" key={t}>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6366f1" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  <span>{t}</span>
+                </div>
+              ))}
+            </motion.div>
+
           </motion.div>
         </div>
       </section>
 
-      {/* Stats Section */}
+      {/* ── STATS ── */}
       <section className="stats-section">
         <div className="container">
-          <motion.div 
-            style={{ textAlign: 'center', marginBottom: 'clamp(30px, 8vw, 50px)' }}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.5 }}
-          >
-            <h2 style={{ fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', fontWeight: '800', color: 'white', marginBottom: '15px' }}>
-              Our <span className="gradient-text">Impact</span> in Numbers
-            </h2>
-            <p style={{ fontSize: 'clamp(0.9rem, 3vw, 1.1rem)', color: 'rgba(255,255,255,0.7)', maxWidth: '600px', margin: '0 auto', padding: '0 20px' }}>
-              Real statistics that showcase our growing community and comprehensive resources
-            </p>
-          </motion.div>
-          
-          <motion.div 
-            className="stats-grid"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.8, delay: 0.6 }}
-          >
-            <div className="card stat-card">
-              <div className="stat-number">
-                {loading ? '...' : formatNumber(stats.totalPYQs)}
-              </div>
-              <div className="stat-label">Question Papers</div>
-            </div>
-            <div className="card stat-card">
-              <div className="stat-number">
-                {loading ? '...' : formatNumber(stats.totalSubjects)}
-              </div>
-              <div className="stat-label">Subjects</div>
-            </div>
-            <div className="card stat-card">
-              <div className="stat-number">
-                {loading ? '...' : formatNumber(stats.totalUsers)}
-              </div>
-              <div className="stat-label">Students</div>
-            </div>
-            <div className="card stat-card">
-              <div className="stat-number">
-                {loading ? '...' : stats.rating}⭐
-              </div>
-              <div className="stat-label">Rating</div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Trust & Achievement Section */}
-      <section style={{
-        padding: 'clamp(60px, 12vw, 80px) 0',
-        background: 'linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%)',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
-        <div className="container" style={{ padding: '0 clamp(20px, 5vw, 40px)' }}>
-          <motion.div 
-            style={{ textAlign: 'center', marginBottom: 'clamp(40px, 10vw, 60px)' }}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-          >
-            <h2 style={{ fontSize: 'clamp(1.8rem, 6vw, 2.5rem)', fontWeight: '800', color: 'white', marginBottom: '20px' }}>
-              Trusted by <span className="gradient-text">Thousands</span> of Students
-            </h2>
-            <p style={{ fontSize: 'clamp(0.9rem, 3vw, 1.1rem)', color: 'rgba(255,255,255,0.8)', maxWidth: '700px', margin: '0 auto', lineHeight: '1.6', padding: '0 20px' }}>
-              Join our growing community of successful students who have aced their exams using our comprehensive question paper collection. Your academic success is our mission.
-            </p>
-          </motion.div>
-          
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fit, minmax(min(250px, 100%), 1fr))',
-            gap: 'clamp(20px, 5vw, 30px)',
-            marginBottom: 'clamp(30px, 8vw, 50px)'
-          }}>
-            <motion.div 
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '20px',
-                padding: 'clamp(20px, 5vw, 30px)',
-                textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.0 }}
-              whileHover={{ scale: 1.05, y: -5 }}
-            >
-              <div style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', marginBottom: '15px' }}>🎯</div>
-              <h3 style={{ color: 'white', fontSize: 'clamp(1.1rem, 4vw, 1.3rem)', fontWeight: '700', marginBottom: '10px' }}>
-                98% Success Rate
-              </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'clamp(0.85rem, 3vw, 0.95rem)', lineHeight: '1.5' }}>
-                Students using our platform report significantly improved exam performance
-              </p>
-            </motion.div>
-            
-            <motion.div 
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '20px',
-                padding: 'clamp(20px, 5vw, 30px)',
-                textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.2 }}
-              whileHover={{ scale: 1.05, y: -5 }}
-            >
-              <div style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', marginBottom: '15px' }}>⚡</div>
-              <h3 style={{ color: 'white', fontSize: 'clamp(1.1rem, 4vw, 1.3rem)', fontWeight: '700', marginBottom: '10px' }}>
-                Lightning Fast
-              </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'clamp(0.85rem, 3vw, 0.95rem)', lineHeight: '1.5' }}>
-                Access any question paper in seconds with our optimized search and download system
-              </p>
-            </motion.div>
-            
-            <motion.div 
-              style={{
-                background: 'rgba(255, 255, 255, 0.05)',
-                backdropFilter: 'blur(20px)',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
-                borderRadius: '20px',
-                padding: 'clamp(20px, 5vw, 30px)',
-                textAlign: 'center',
-                position: 'relative',
-                overflow: 'hidden'
-              }}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.4 }}
-              whileHover={{ scale: 1.05, y: -5 }}
-            >
-              <div style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', marginBottom: '15px' }}>🔒</div>
-              <h3 style={{ color: 'white', fontSize: 'clamp(1.1rem, 4vw, 1.3rem)', fontWeight: '700', marginBottom: '10px' }}>
-                100% Secure
-              </h3>
-              <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 'clamp(0.85rem, 3vw, 0.95rem)', lineHeight: '1.5' }}>
-                Your data and downloads are protected with enterprise-grade security
-              </p>
-            </motion.div>
+          <div className="stats-grid">
+            {[
+              { label: 'Question Papers', value: loading ? '—' : fmt(stats.totalPYQs) },
+              { label: 'Subjects Covered', value: loading ? '—' : fmt(stats.totalSubjects) },
+              { label: 'Students Joined', value: loading ? '—' : fmt(stats.totalUsers) },
+              { label: 'Total Downloads',  value: loading ? '—' : fmt(stats.totalDownloads || 0) },
+            ].map(({ label, value }, i) => (
+              <motion.div
+                key={label}
+                className="stat-card"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 + i * 0.08, duration: 0.45 }}
+              >
+                <div className="stat-number"><span>{value}</span></div>
+                <div className="stat-label">{label}</div>
+              </motion.div>
+            ))}
           </div>
-          
-          {/* Call to Action */}
-          <motion.div 
-            style={{ textAlign: 'center' }}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.6 }}
-          >
-            <Link 
-              to="/signup" 
-              style={{
-                display: 'inline-block',
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                padding: 'clamp(12px, 3vw, 15px) clamp(30px, 8vw, 40px)',
-                borderRadius: '50px',
-                textDecoration: 'none',
-                fontSize: 'clamp(0.9rem, 3vw, 1.1rem)',
-                fontWeight: '600',
-                boxShadow: '0 10px 30px rgba(102, 126, 234, 0.3)',
-                transition: 'all 0.3s ease',
-                border: 'none'
-              }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-3px)'
-                e.target.style.boxShadow = '0 15px 40px rgba(102, 126, 234, 0.4)'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)'
-                e.target.style.boxShadow = '0 10px 30px rgba(102, 126, 234, 0.3)'
-              }}
-            >
-              🚀 Start Your Success Journey
-            </Link>
-          </motion.div>
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* ── FEATURES ── */}
       <section className="features-section">
-        <div className="container" style={{ padding: '0 clamp(20px, 5vw, 40px)' }}>
-          <motion.div 
-            style={{ textAlign: 'center', marginBottom: 'clamp(40px, 10vw, 60px)' }}
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.8 }}
-          >
-            <h2 style={{ fontSize: 'clamp(2rem, 8vw, 3rem)', fontWeight: '900', color: 'white', marginBottom: '20px' }}>
-              Why Choose <span className="gradient-text">PYQ Hub?</span>
+        <div className="container">
+          <div className="section-header centered">
+            <div className="section-divider" />
+            <p className="label" style={{ marginBottom: '12px' }}>Platform Features</p>
+            <h2 className="heading-lg" style={{ marginBottom: '16px' }}>
+              Everything you need to<br />
+              <span className="gradient-text">ace your exams</span>
             </h2>
-            <p style={{ fontSize: 'clamp(1rem, 4vw, 1.2rem)', color: 'rgba(255,255,255,0.8)', maxWidth: '600px', margin: '0 auto', padding: '0 20px' }}>
-              Experience the future of academic preparation with our cutting-edge platform
+            <p style={{ color: 'var(--text-2)', maxWidth: '480px', margin: '0 auto', fontSize: '1rem' }}>
+              Built for students, by students. Simple, fast, and reliable.
             </p>
-          </motion.div>
-          
+          </div>
+
           <div className="features-grid">
-            <motion.div 
-              className="card feature-card"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.0 }}
-            >
-              <div className="feature-icon">🔍</div>
-              <h3 className="feature-title">Smart Search</h3>
-              <p className="feature-description">
-                Find previous year questions by subject, year, or topic with our intelligent search system.
-              </p>
-            </motion.div>
-            
-            <motion.div 
-              className="card feature-card"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.2 }}
-            >
-              <div className="feature-icon">📤</div>
-              <h3 className="feature-title">Easy Upload</h3>
-              <p className="feature-description">
-                Contribute to the community by uploading question papers with our seamless upload system.
-              </p>
-            </motion.div>
-            
-            <motion.div 
-              className="card feature-card"
-              initial={{ opacity: 0, y: 50 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.4 }}
-            >
-              <div className="feature-icon">🛡️</div>
-              <h3 className="feature-title">Quality Control</h3>
-              <p className="feature-description">
-                All uploads are reviewed by our admin team to ensure high-quality, accurate content.
-              </p>
-            </motion.div>
+            {features.map((f, i) => (
+              <motion.div
+                key={f.title}
+                className="feature-card"
+                initial={{ opacity: 0, y: 24 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 + i * 0.07, duration: 0.45 }}
+              >
+                <div className="feature-icon-wrap">{f.icon}</div>
+                <h3 className="feature-title">{f.title}</h3>
+                <p className="feature-description">{f.desc}</p>
+              </motion.div>
+            ))}
           </div>
         </div>
       </section>
+
+      {/* ── CTA ── */}
+      <section className="cta-section">
+        <div className="container">
+          <motion.div
+            className="cta-box"
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2, duration: 0.5 }}
+          >
+            {/* top glow line already done via CSS ::before */}
+            <div className="blob blob-blue" style={{ top: '-80px', left: '50%', transform: 'translateX(-50%)', opacity: 0.4 }} />
+
+            <p className="label" style={{ marginBottom: '16px', position: 'relative', zIndex: 1 }}>Get Started Today</p>
+            <h2 className="heading-lg" style={{ marginBottom: '16px', position: 'relative', zIndex: 1 }}>
+              Join hundreds of students<br />already using <span className="gradient-text">PYQ Hub</span>
+            </h2>
+            <p style={{ color: 'var(--text-2)', marginBottom: '32px', maxWidth: '460px', margin: '0 auto 32px', position: 'relative', zIndex: 1, fontSize: '0.95rem', lineHeight: '1.7' }}>
+              Create a free account to instantly receive 500 credits. Browse papers, contribute to the community, and upgrade to PRO for limitless downloads.
+            </p>
+
+            <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
+              <Link to="/browse" className="btn btn-primary btn-lg">
+                Start Browsing
+              </Link>
+              <Link to="/about" className="btn btn-ghost btn-lg">
+                Learn More
+              </Link>
+            </div>
+
+            <div style={{ display: 'flex', gap: '24px', justifyContent: 'center', marginTop: '32px', flexWrap: 'wrap', position: 'relative', zIndex: 1 }}>
+              {['Free 500 Credits', 'Stripe & Razorpay integrated', 'Mobile friendly'].map(t => (
+                <div key={t} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.82rem', color: 'var(--text-2)' }}>
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4ade80" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="20 6 9 17 4 12"/>
+                  </svg>
+                  {t}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
     </div>
   )
 }

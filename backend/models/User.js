@@ -25,6 +25,18 @@ const userSchema = new mongoose.Schema(
       enum: ["user", "admin"],
       default: "user"
     },
+    credits: {
+      type: Number,
+      default: 500
+    },
+    isPro: {
+      type: Boolean,
+      default: false
+    },
+    lastCreditReset: {
+      type: Date,
+      default: Date.now
+    },
     isActive: {
       type: Boolean,
       default: true

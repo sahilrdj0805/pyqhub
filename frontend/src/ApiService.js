@@ -3,7 +3,7 @@ import AuthService from './AuthService'
 
 // Create axios instance with base configuration
 const api = axios.create({
-  baseURL: 'https://pyqproject-backend.onrender.com/api',
+  baseURL: '/api',
   timeout: 10000, // 10 second timeout
   headers: {
     'Content-Type': 'application/json'
@@ -111,7 +111,7 @@ export const AdminAPI = {
   // Admin direct upload PYQ (same as user upload)
   async uploadPYQ(formData) {
     try {
-      const response = await axios.post('https://pyqproject-backend.onrender.com/api/admin/upload-pyq', formData, {
+      const response = await axios.post('/api/admin/upload-pyq', formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
           ...AuthService.getAuthHeaders(null)
@@ -210,7 +210,7 @@ export const AuthAPI = {
 
 // Contact API instance for production
 const contactApi = axios.create({
-  baseURL: 'https://pyqproject-backend.onrender.com/api',
+  baseURL: '/api',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json'

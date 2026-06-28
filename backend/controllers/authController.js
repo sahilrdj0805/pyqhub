@@ -41,7 +41,9 @@ export const signup = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        isPro: user.isPro,
+        credits: user.credits
       }
     });
   } catch (error) {
@@ -75,7 +77,9 @@ export const signin = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        isPro: user.isPro,
+        credits: user.credits
       }
     });
   } catch (error) {
@@ -110,7 +114,9 @@ export const adminLogin = async (req, res) => {
         id: user._id,
         name: user.name,
         email: user.email,
-        role: user.role
+        role: user.role,
+        isPro: user.isPro,
+        credits: user.credits
       }
     });
   } catch (error) {

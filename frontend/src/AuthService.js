@@ -2,7 +2,6 @@
 class AuthService {
   static TOKEN_KEY = 'pyq_token'
   static USER_KEY = 'pyq_user'
-  static REFRESH_KEY = 'pyq_refresh'
 
   // Get token with validation
   static getToken() {

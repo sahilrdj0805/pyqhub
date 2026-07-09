@@ -111,10 +111,9 @@ export const AdminAPI = {
   // Admin direct upload PYQ (same as user upload)
   async uploadPYQ(formData) {
     try {
-      const response = await axios.post('/api/admin/upload-pyq', formData, {
+      const response = await api.post('/admin/upload-pyq', formData, {
         headers: { 
           'Content-Type': 'multipart/form-data',
-          ...AuthService.getAuthHeaders(null)
         },
         timeout: 120000 // 2 minute timeout for uploads
       })

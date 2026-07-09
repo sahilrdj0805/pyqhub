@@ -60,7 +60,6 @@ const Auth = () => {
       } else {
         response = await AuthAPI.signin({ email: form.email, password: form.password })
       }
-      AuthService.setToken(response.token)
       AuthService.setUser(response.user)
       showToast(isSignup ? 'Account created! Redirecting…' : 'Welcome back! Redirecting…', 'success')
       setTimeout(() => {

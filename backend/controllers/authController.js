@@ -10,6 +10,15 @@ const generateToken = (user) => {
   );
 };
 
+// Cookie options — httpOnly so JS cannot access it
+const cookieOptions = {
+  httpOnly: true,                                         // JS cannot read this cookie
+  secure: process.env.NODE_ENV === "production",          // HTTPS only in production
+  sameSite: process.env.NODE_ENV === "production" ? "none" : "strict", // cross-site in prod (frontend on different domain)
+  maxAge: 30 * 24 * 60 * 60 * 1000,                     // 30 days in ms
+  path: "/"
+};
+
 // =======================
 // USER SIGNUP (USER ONLY)
 // =======================
@@ -34,9 +43,11 @@ export const signup = async (req, res) => {
 
     const token = generateToken(user);
 
+    // Set token in httpOnly cookie
+    res.cookie("pyq_token", token, cookieOptions);
+
     res.status(201).json({
       success: true,
-      token,
       user: {
         id: user._id,
         name: user.name,
@@ -52,7 +63,7 @@ export const signup = async (req, res) => {
 };
 
 // =======================
-// LOGIN (USER + ADMIN)
+// LOGIN (USER ONLY)
 // =======================
 export const signin = async (req, res) => {
   try {
@@ -70,9 +81,11 @@ export const signin = async (req, res) => {
 
     const token = generateToken(user);
 
+    // Set token in httpOnly cookie
+    res.cookie("pyq_token", token, cookieOptions);
+
     res.json({
       success: true,
-      token,
       user: {
         id: user._id,
         name: user.name,
@@ -95,7 +108,7 @@ export const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email, role: 'admin' });
+    const user = await User.findOne({ email, role: "admin" });
     if (!user) {
       return res.status(401).json({ message: "Invalid admin credentials" });
     }
@@ -107,9 +120,11 @@ export const adminLogin = async (req, res) => {
 
     const token = generateToken(user);
 
+    // Set token in httpOnly cookie
+    res.cookie("pyq_token", token, cookieOptions);
+
     res.json({
       success: true,
-      token,
       user: {
         id: user._id,
         name: user.name,
@@ -122,6 +137,14 @@ export const adminLogin = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
+};
+
+// =======================
+// LOGOUT
+// =======================
+export const logout = async (req, res) => {
+  res.clearCookie("pyq_token", { ...cookieOptions, maxAge: 0 });
+  res.json({ success: true, message: "Logged out successfully" });
 };
 
 // =======================

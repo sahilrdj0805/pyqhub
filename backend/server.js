@@ -1,6 +1,7 @@
 import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import subjectRoutes from './routes/subjectRoutes.js';
 import pyqRoutes from './routes/pyqRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
@@ -80,6 +81,7 @@ app.use(cors({
 }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser()); // Parse httpOnly cookies
 
 // PDF Proxy Route for proper viewing
 app.get('/api/pdf/:id', protect, async (req, res) => {

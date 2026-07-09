@@ -163,7 +163,7 @@ const AdminDashboard = () => {
         setPending(await AdminAPI.getPendingRequests())
       }
     } catch (e) {
-      if (e?.response?.status === 401) AuthService.logout()
+      if (e?.response?.status === 401) await AuthService.logout()
     } finally {
       setLoading(false)
     }
@@ -300,7 +300,7 @@ const AdminDashboard = () => {
             <div style={{ fontSize:'0.7rem', color:'var(--text-3)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{user?.email}</div>
           </div>
         </div>
-        <button onClick={() => AuthService.logout()}
+        <button onClick={async () => await AuthService.logout()}
           style={{ display:'flex', alignItems:'center', gap:8, width:'calc(100% - 0px)', padding:'8px 12px', margin:'0', borderRadius:8, border:'none', background:'transparent', color:'#f87171', fontSize:'0.82rem', fontWeight:500, cursor:'pointer', transition:'all 0.15s' }}
           onMouseEnter={e => e.currentTarget.style.background='rgba(239,68,68,0.08)'}
           onMouseLeave={e => e.currentTarget.style.background='transparent'}

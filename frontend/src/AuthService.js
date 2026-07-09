@@ -1,9 +1,41 @@
-// Auth utility — token is now stored in httpOnly cookie (managed by browser automatically)
-// Frontend only stores non-sensitive user info (name, email, role) in localStorage
+// Auth utility for centralized token management
 class AuthService {
+  static TOKEN_KEY = 'pyq_token'
   static USER_KEY = 'pyq_user'
 
-  // Get user data from localStorage
+  // Get token with validation
+  static getToken() {
+    try {
+      const token = localStorage.getItem(this.TOKEN_KEY)
+      if (!token) return null
+      
+      // Basic JWT validation
+      const parts = token.split('.')
+      if (parts.length !== 3) {
+        this.clearAuth()
+        return null
+      }
+      
+      return token
+    } catch (error) {
+      console.error('Token retrieval failed:', error)
+      return null
+    }
+  }
+
+  // Set token securely
+  static setToken(token) {
+    if (!token) return false
+    try {
+      localStorage.setItem(this.TOKEN_KEY, token)
+      return true
+    } catch (error) {
+      console.error('Token storage failed:', error)
+      return false
+    }
+  }
+
+  // Get user data
   static getUser() {
     try {
       const user = localStorage.getItem(this.USER_KEY)
@@ -14,7 +46,7 @@ class AuthService {
     }
   }
 
-  // Set user data in localStorage (no token — cookie handles it)
+  // Set user data
   static setUser(user) {
     if (!user) return false
     try {
@@ -26,47 +58,56 @@ class AuthService {
     }
   }
 
-  // Clear user data from localStorage
+  // Clear all auth data
   static clearAuth() {
     try {
+      localStorage.removeItem(this.TOKEN_KEY)
       localStorage.removeItem(this.USER_KEY)
-      // Clear any legacy keys from old localStorage-based auth
+      localStorage.removeItem(this.REFRESH_KEY)
+      // Clear legacy keys
       localStorage.removeItem('token')
       localStorage.removeItem('user')
-      localStorage.removeItem('pyq_token')
-      localStorage.removeItem('pyq_refresh')
     } catch (error) {
       console.error('Auth clear failed:', error)
     }
   }
 
-  // Check authentication status based on stored user info
-  // The actual token validity is enforced by the backend via httpOnly cookie
+  // Check authentication status
   static isAuthenticated() {
-    return !!this.getUser()
+    const token = this.getToken()
+    const user = this.getUser()
+    return !!(token && user)
   }
 
-  // Logout — calls backend to clear the httpOnly cookie, then clears local user data
-  static async logout() {
-    try {
-      await fetch((import.meta.env.VITE_API_URL || '') + '/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include' // sends the httpOnly cookie to backend
-      })
-    } catch (e) {
-      // Ignore network errors on logout
-    } finally {
-      this.clearAuth()
-      window.location.href = '/login'
+  // Get auth headers for API calls
+  static getAuthHeaders(contentType = 'application/json') {
+    const token = this.getToken()
+    if (!token) {
+      throw new Error('No authentication token found')
     }
+    
+    const headers = {
+      'Authorization': `Bearer ${token}`
+    }
+    
+    if (contentType) {
+      headers['Content-Type'] = contentType
+    }
+    
+    return headers
   }
 
-  // Handle auth errors (401 = cookie expired/invalid)
+  // Logout user
+  static logout() {
+    this.clearAuth()
+    window.location.href = '/login'
+  }
+
+  // Handle auth errors
   static handleAuthError(error) {
     if (error.response?.status === 401) {
       console.warn('Authentication failed, logging out...')
-      this.clearAuth()
-      window.location.href = '/login'
+      this.logout()
       return true
     }
     return false

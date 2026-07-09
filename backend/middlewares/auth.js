@@ -7,12 +7,7 @@ export const protect = (req, res, next) => {
   try {
     let token;
 
-    // 1. Try httpOnly cookie first (preferred, secure)
-    if (req.cookies && req.cookies.pyq_token) {
-      token = req.cookies.pyq_token;
-    }
-    // 2. Fallback to Authorization header (for API clients / Postman)
-    else if (
+    if (
       req.headers.authorization &&
       req.headers.authorization.startsWith("Bearer")
     ) {
@@ -23,6 +18,7 @@ export const protect = (req, res, next) => {
       return res.status(401).json({ message: "No token, authorization denied" });
     }
 
+    // ❗ No fallback secret
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
     // Attach decoded data to request

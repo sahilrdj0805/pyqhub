@@ -10,18 +10,6 @@ const generateToken = (user) => {
   );
 };
 
-// Render sets RENDER=true automatically; fallback to NODE_ENV check
-const isProduction = process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
-
-// Cookie options — httpOnly so JS cannot access it
-const cookieOptions = {
-  httpOnly: true,          // JS cannot read this cookie (XSS safe)
-  secure: isProduction,    // HTTPS only in production (required for SameSite=None)
-  sameSite: isProduction ? 'none' : 'strict', // 'none' needed for cross-domain (different Render services)
-  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in ms
-  path: '/'
-};
-
 // =======================
 // USER SIGNUP (USER ONLY)
 // =======================
@@ -46,11 +34,9 @@ export const signup = async (req, res) => {
 
     const token = generateToken(user);
 
-    // Set token in httpOnly cookie
-    res.cookie("pyq_token", token, cookieOptions);
-
     res.status(201).json({
       success: true,
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -66,7 +52,7 @@ export const signup = async (req, res) => {
 };
 
 // =======================
-// LOGIN (USER ONLY)
+// LOGIN (USER + ADMIN)
 // =======================
 export const signin = async (req, res) => {
   try {
@@ -84,11 +70,9 @@ export const signin = async (req, res) => {
 
     const token = generateToken(user);
 
-    // Set token in httpOnly cookie
-    res.cookie("pyq_token", token, cookieOptions);
-
     res.json({
       success: true,
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -111,7 +95,7 @@ export const adminLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const user = await User.findOne({ email, role: "admin" });
+    const user = await User.findOne({ email, role: 'admin' });
     if (!user) {
       return res.status(401).json({ message: "Invalid admin credentials" });
     }
@@ -123,11 +107,9 @@ export const adminLogin = async (req, res) => {
 
     const token = generateToken(user);
 
-    // Set token in httpOnly cookie
-    res.cookie("pyq_token", token, cookieOptions);
-
     res.json({
       success: true,
+      token,
       user: {
         id: user._id,
         name: user.name,
@@ -140,14 +122,6 @@ export const adminLogin = async (req, res) => {
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
-};
-
-// =======================
-// LOGOUT
-// =======================
-export const logout = async (req, res) => {
-  res.clearCookie("pyq_token", { ...cookieOptions, maxAge: 0 });
-  res.json({ success: true, message: "Logged out successfully" });
 };
 
 // =======================

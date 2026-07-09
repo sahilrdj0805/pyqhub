@@ -5,16 +5,27 @@ import AuthService from './AuthService'
 const api = axios.create({
   baseURL: (import.meta.env.VITE_API_URL || '') + '/api',
   timeout: 10000, // 10 second timeout
-  withCredentials: true, // Always send httpOnly cookies with every request
   headers: {
     'Content-Type': 'application/json'
   }
 })
 
-// Request interceptor — no token needed, cookie is sent automatically by browser
+// Request interceptor to add auth headers
 api.interceptors.request.use(
-  (config) => config,
-  (error) => Promise.reject(error)
+  (config) => {
+    try {
+      const token = AuthService.getToken()
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
+    } catch (error) {
+      // Continue without auth headers for public endpoints
+    }
+    return config
+  },
+  (error) => {
+    return Promise.reject(error)
+  }
 )
 
 // Response interceptor to handle auth errors
@@ -200,7 +211,6 @@ export const AuthAPI = {
 const contactApi = axios.create({
   baseURL: (import.meta.env.VITE_API_URL || '') + '/api',
   timeout: 10000,
-  withCredentials: true, // send httpOnly cookies
   headers: {
     'Content-Type': 'application/json'
   }
@@ -221,7 +231,10 @@ export const ContactAPI = {
   // Get all contact messages (Admin only)
   async getAllMessages() {
     try {
-      const response = await contactApi.get('/contact')
+      const token = AuthService.getToken()
+      const response = await contactApi.get('/contact', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       return response.data
     } catch (error) {
       throw new Error('Failed to fetch messages')
@@ -231,7 +244,10 @@ export const ContactAPI = {
   // Update message status (Admin only)
   async updateMessage(messageId, updateData) {
     try {
-      const response = await contactApi.put(`/contact/${messageId}`, updateData)
+      const token = AuthService.getToken()
+      const response = await contactApi.put(`/contact/${messageId}`, updateData, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       return response.data
     } catch (error) {
       throw new Error('Failed to update message')
@@ -241,7 +257,10 @@ export const ContactAPI = {
   // Delete message (Admin only)
   async deleteMessage(messageId) {
     try {
-      const response = await contactApi.delete(`/contact/${messageId}`)
+      const token = AuthService.getToken()
+      const response = await contactApi.delete(`/contact/${messageId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       return response.data
     } catch (error) {
       throw new Error('Failed to delete message')
@@ -251,7 +270,10 @@ export const ContactAPI = {
   // Get contact stats (Admin only)
   async getContactStats() {
     try {
-      const response = await contactApi.get('/contact/stats')
+      const token = AuthService.getToken()
+      const response = await contactApi.get('/contact/stats', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
       return response.data
     } catch (error) {
       return {

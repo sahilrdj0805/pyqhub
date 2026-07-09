@@ -10,14 +10,11 @@ const generateToken = (user) => {
   );
 };
 
-// Render sets RENDER=true automatically; fallback to NODE_ENV check
-const isProduction = process.env.RENDER === 'true' || process.env.NODE_ENV === 'production';
-
 // Cookie options — httpOnly so JS cannot access it
 const cookieOptions = {
   httpOnly: true,          // JS cannot read this cookie (XSS safe)
-  secure: isProduction,    // HTTPS only in production (required for SameSite=None)
-  sameSite: isProduction ? 'none' : 'strict', // 'none' needed for cross-domain (different Render services)
+  secure: true,            // HTTPS only (required for SameSite=None)
+  sameSite: 'none',        // 'none' needed for cross-domain (different Render services)
   maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days in ms
   path: '/'
 };

@@ -244,7 +244,7 @@ const Navbar = () => {
                           </Link>
                         )}
                         <button
-                          onClick={async () => { setDropdownOpen(false); await AuthService.logout() }}
+                          onClick={() => { setDropdownOpen(false); AuthService.logout() }}
                           style={{
                             display: 'flex', alignItems: 'center', gap: '10px', width: '100%',
                             padding: '9px 12px', borderRadius: 'var(--radius-sm)',
@@ -381,7 +381,7 @@ const Navbar = () => {
               {/* Sign Out */}
               <div style={{ padding: '12px 8px 24px', borderTop: '1px solid var(--border)' }}>
                 <button
-                  onClick={async () => await AuthService.logout()}
+                  onClick={() => AuthService.logout()}
                   style={{
                     display: 'flex', alignItems: 'center', gap: 10, width: '100%',
                     padding: '12px 14px', borderRadius: 'var(--radius-sm)',

@@ -33,7 +33,7 @@ const allowedOrigins = [
 ];
 
 // Handle OPTIONS preflight requests explicitly before CORS middleware
-app.options('*', cors({
+app.options('/{*path}', cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) !== -1) {
